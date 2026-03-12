@@ -8,8 +8,13 @@ input/output transparently. Intercepts:
 
 Architecture:
   pty.fork() → asyncio dual-reader loop
-  Parent: raw stdin → shadow buffer tracking + forward to child PTY
+  Parent: raw stdin → forward to child PTY
   Child: exec target command with PROMPT_TOOLKIT_NO_CPR=1
+
+Line capture strategy:
+  Ctrl+U clears the line (saves to readline kill-ring).
+  Ctrl+Y yanks it back — the yanked text appears in child stdout.
+  We read that stdout to get the actual current line content.
 """
 from __future__ import annotations
 
@@ -17,6 +22,7 @@ import asyncio
 import fcntl
 import os
 import pty
+import re
 import shutil
 import signal
 import struct
@@ -24,6 +30,12 @@ import sys
 import termios
 import tty
 from pathlib import Path
+
+_ANSI_RE = re.compile(rb'\x1b\[[0-9;]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b.')
+
+
+def _strip_ansi(data: bytes) -> str:
+    return _ANSI_RE.sub(b'', data).decode('utf-8', errors='replace').strip()
 
 from tui_translator.buffer import ShadowBuffer
 from tui_translator.config import AppConfig, ConfigError, default_config_path, load_config, _load_dotenv
@@ -34,17 +46,17 @@ from tui_translator.translator import TranslationError, rewrite_to_english
 # ── Pure logic helpers (unit-testable) ────────────────────────────────────────
 
 async def _do_translate(
-    buf: ShadowBuffer,
+    text: str,
     stack: UndoStack,
+    buf: ShadowBuffer,
     status: dict,
     config: AppConfig,
 ) -> str:
     """
-    Translate current buffer content. Updates buf and stack in-place.
+    Translate the given text. Updates buf and stack in-place.
     Returns translated text on success, original text on failure.
-    No-op (returns "") if buffer is empty.
+    No-op (returns "") if text is empty.
     """
-    text = buf.text()
     if not text.strip():
         return text
 
@@ -112,11 +124,36 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
     async def do_translate() -> None:
         nonlocal translating
         translating = True
-        text = buf.text()
 
-        # Tell child to clear its line
         try:
-            os.write(master_fd, b"\x15")  # Ctrl+U
+            # Step 1: Ctrl+U — clears line, saves to readline kill-ring
+            os.write(master_fd, b"\x15")
+            await asyncio.sleep(0.03)  # let child process Ctrl+U
+
+            # Step 2: Ctrl+Y — yanks text back; it appears in child stdout
+            os.write(master_fd, b"\x19")
+            await asyncio.sleep(0.05)  # let child flush the yanked text
+
+            # Step 3: Read child stdout (non-blocking) to capture yanked text
+            flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+            fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+            try:
+                raw = os.read(master_fd, 4096)
+            except BlockingIOError:
+                raw = b""
+            finally:
+                fcntl.fcntl(master_fd, fcntl.F_SETFL, flags)
+
+            captured = _strip_ansi(raw)
+
+            # Step 4: If empty, nothing to translate — restore the yank is a noop
+            if not captured.strip():
+                translating = False
+                return
+
+            # Step 5: Ctrl+U again — clear the yanked text (we have it now)
+            os.write(master_fd, b"\x15")
+
         except OSError:
             translating = False
             return
@@ -125,9 +162,8 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
         indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
         os.write(sys.stdout.fileno(), indicator)
 
-        await asyncio.sleep(0.03)  # let child process Ctrl+U
-
-        result = await _do_translate(buf, stack, status, config)
+        # Step 6: Translate using captured text
+        result = await _do_translate(captured, stack, buf, status, config)
 
         # Clear indicator
         os.write(sys.stdout.fileno(), b"\r\x1b[2K")
@@ -173,10 +209,6 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
             if not translating:
                 do_undo()
             return
-
-        # Update shadow buffer (only when not translating)
-        if not translating:
-            buf.feed(data)
 
         # Forward to child
         try:
