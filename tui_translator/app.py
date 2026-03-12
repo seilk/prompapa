@@ -23,9 +23,10 @@ import struct
 import sys
 import termios
 import tty
+from pathlib import Path
 
 from tui_translator.buffer import ShadowBuffer
-from tui_translator.config import AppConfig, ConfigError, default_config_path, load_config
+from tui_translator.config import AppConfig, ConfigError, default_config_path, load_config, _load_dotenv
 from tui_translator.masking import mask_tokens, unmask_tokens
 from tui_translator.state import UndoStack
 from tui_translator.translator import TranslationError, rewrite_to_english
@@ -206,6 +207,7 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    _load_dotenv(Path(".env"))
     config_path = default_config_path()
     try:
         config = load_config(config_path)
