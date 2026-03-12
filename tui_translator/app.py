@@ -31,7 +31,14 @@ import termios
 import tty
 from pathlib import Path
 
-_ANSI_RE = re.compile(rb'\x1b\[[0-9;]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b.')
+# Matches: CSI sequences (ESC[...X), OSC sequences (ESC]...BEL), DCS/PM/APC,
+# private mode sequences (?2026h etc), and bare ESC + one char
+_ANSI_RE = re.compile(
+    rb'\x1b\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]'  # CSI: ESC [ params intermediate final
+    rb'|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)'          # OSC: ESC ] ... BEL or ST
+    rb'|\x1b[PX^_][^\x1b]*\x1b\\'                   # DCS/SOS/PM/APC
+    rb'|\x1b.'                                        # ESC + any single char
+)
 
 
 def _read_with_timeout(fd: int, size: int = 4096, timeout: float = 0.3) -> bytes:
@@ -146,24 +153,29 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
             while _read_with_timeout(master_fd, timeout=0.02):
                 pass
 
-            # Step 1: Ctrl+U — clears line, saves to readline kill-ring
+            # Step 1: Ctrl+E — move cursor to end of line first
+            os.write(master_fd, b"\x05")
+            await asyncio.sleep(0.03)
+            _read_with_timeout(master_fd, timeout=0.05)  # discard cursor move output
+
+            # Step 2: Ctrl+U — clears whole line, saves to readline kill-ring
             os.write(master_fd, b"\x15")
             await asyncio.sleep(0.05)
             _read_with_timeout(master_fd)  # discard backspaces + clear sequence
 
-            # Step 2: Ctrl+Y — yanks text back; appears in child stdout
+            # Step 3: Ctrl+Y — yanks text back; appears in child stdout
             os.write(master_fd, b"\x19")
             await asyncio.sleep(0.05)
 
-            # Step 3: Non-blocking read — no asyncio reader competition
+            # Step 4: Non-blocking read — no asyncio reader competition
             raw = _read_with_timeout(master_fd)
             captured = _strip_ansi(raw)
 
-            # Step 4: If empty, nothing to translate — finally will clean up
+            # Step 5: If empty, nothing to translate — finally will clean up
             if not captured.strip():
                 captured = ""
             else:
-                # Step 5: Ctrl+U again — clear the yanked text (we have it now)
+                # Step 6: Ctrl+U again — clear the yanked text (we have it now)
                 os.write(master_fd, b"\x15")
                 await asyncio.sleep(0.03)
                 _read_with_timeout(master_fd)  # discard
@@ -196,7 +208,8 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
         restored = _do_undo(stack, buf, status)
         if restored is not None:
             try:
-                os.write(master_fd, b"\x15")  # Ctrl+U
+                os.write(master_fd, b"\x05")   # Ctrl+E: move to end of line
+                os.write(master_fd, b"\x15")   # Ctrl+U: kill whole line
                 os.write(master_fd, restored.encode("utf-8"))
             except OSError:
                 pass
