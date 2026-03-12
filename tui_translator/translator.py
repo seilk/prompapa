@@ -17,11 +17,15 @@ async def _translate_google(text: str, api_key: str) -> str:
         "q": text,
         "target": "en",
         "format": "text",
-        "key": api_key,
     }
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(_GOOGLE_URL, json=payload, timeout=_TIMEOUT)
+            response = await client.post(
+                _GOOGLE_URL,
+                params={"key": api_key},
+                json=payload,
+                timeout=_TIMEOUT,
+            )
             response.raise_for_status()
             return response.json()["data"]["translations"][0]["translatedText"]
     except httpx.HTTPStatusError as e:
