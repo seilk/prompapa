@@ -1,98 +1,209 @@
+"""
+PTY proxy for tui-translator.
+
+Wraps a target CLI app (e.g. `claude`, `opencode`) in a PTY, forwarding all
+input/output transparently. Intercepts:
+  Ctrl+T (0x14): translate current input line Korean→English in-place
+  Ctrl+Z (0x1a): undo last translation
+
+Architecture:
+  pty.fork() → asyncio dual-reader loop
+  Parent: raw stdin → shadow buffer tracking + forward to child PTY
+  Child: exec target command with PROMPT_TOOLKIT_NO_CPR=1
+"""
 from __future__ import annotations
+
+import asyncio
+import fcntl
+import os
+import pty
+import shutil
+import signal
+import struct
 import sys
+import termios
+import tty
 
-from prompt_toolkit import Application
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import HSplit, Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.styles import Style
-from prompt_toolkit.widgets import TextArea
-
+from tui_translator.buffer import ShadowBuffer
 from tui_translator.config import AppConfig, ConfigError, default_config_path, load_config
 from tui_translator.masking import mask_tokens, unmask_tokens
 from tui_translator.state import UndoStack
 from tui_translator.translator import TranslationError, rewrite_to_english
 
+# ── Pure logic helpers (unit-testable) ────────────────────────────────────────
 
-async def _do_translate(text: str, stack: UndoStack, status: dict, config: AppConfig) -> str:
-    """Translate text; returns translated on success, original on failure."""
-    status["msg"] = "Translating..."
+async def _do_translate(
+    buf: ShadowBuffer,
+    stack: UndoStack,
+    status: dict,
+    config: AppConfig,
+) -> str:
+    """
+    Translate current buffer content. Updates buf and stack in-place.
+    Returns translated text on success, original text on failure.
+    No-op (returns "") if buffer is empty.
+    """
+    text = buf.text()
+    if not text.strip():
+        return text
+
+    status["msg"] = "translating"
     ctx = mask_tokens(text, enabled=config.preserve_backticks)
+
     try:
         masked_result = await rewrite_to_english(ctx.masked, config)
     except TranslationError as e:
         status["msg"] = f"[Error] {e}"
         return text
+
     result = unmask_tokens(masked_result, ctx.tokens)
     stack.push(text)
+    buf.set_text(result)
     status["msg"] = ""
     return result
 
 
-def _do_undo(stack: UndoStack, status: dict) -> str | None:
-    """Restore last pre-translation snapshot; returns None if nothing to undo."""
+def _do_undo(
+    stack: UndoStack,
+    buf: ShadowBuffer,
+    status: dict,
+) -> str | None:
+    """
+    Restore last pre-translation snapshot.
+    Updates buf in-place. Returns restored text or None if nothing to undo.
+    """
     if not stack.can_undo():
         status["msg"] = "[Info] Nothing to undo."
         return None
     restored = stack.pop()
+    buf.set_text(restored)
     status["msg"] = ""
     return restored
 
 
-def build_app(config: AppConfig) -> tuple[Application, TextArea]:
+# ── PTY proxy loop ─────────────────────────────────────────────────────────────
+
+def _set_winsize(fd: int) -> None:
+    """Forward current terminal window size to PTY master fd."""
+    cols, rows = shutil.get_terminal_size()
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+
+
+async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
+    """
+    Asyncio event loop body for the PTY proxy.
+    Reads from stdin and master_fd simultaneously.
+    """
+    loop = asyncio.get_running_loop()
     stack = UndoStack()
+    buf = ShadowBuffer()
     status: dict[str, str] = {"msg": ""}
+    translating = False
 
-    text_area = TextArea(text="", multiline=True, scrollbar=True,
-                         focus_on_click=True, wrap_lines=True)
+    def handle_child_output() -> None:
+        """Child PTY output → our stdout."""
+        try:
+            data = os.read(master_fd, 4096)
+            os.write(sys.stdout.fileno(), data)
+        except OSError:
+            loop.stop()
 
-    def get_status_text() -> str:
-        info = f"[{config.provider}/{config.model}]"
-        msg = status["msg"]
-        if msg:
-            return f" {info}  {msg}"
-        return f" {info}  Ready — Ctrl+T translate | Ctrl+Z undo | Ctrl+C quit"
+    async def do_translate() -> None:
+        nonlocal translating
+        translating = True
+        text = buf.text()
 
-    header = Window(height=1, content=FormattedTextControl(get_status_text), style="class:status")
-    footer = Window(height=1,
-                    content=FormattedTextControl(" Ctrl+T: translate  Ctrl+Z: undo  Ctrl+C: quit"),
-                    style="class:status")
-
-    layout = Layout(HSplit([header, text_area, footer]), focused_element=text_area)
-    kb = KeyBindings()
-
-    @kb.add("c-t")
-    async def handle_translate(event) -> None:
-        current = text_area.text
-        if not current.strip():
+        # Tell child to clear its line
+        try:
+            os.write(master_fd, b"\x15")  # Ctrl+U
+        except OSError:
+            translating = False
             return
-        translated = await _do_translate(current, stack, status, config)
-        text_area.text = translated
-        text_area.buffer.cursor_position = len(translated)
-        event.app.invalidate()
 
-    @kb.add("c-z")
-    def handle_undo(event) -> None:
-        restored = _do_undo(stack, status)
+        # Show indicator on our stdout
+        indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
+        os.write(sys.stdout.fileno(), indicator)
+
+        await asyncio.sleep(0.03)  # let child process Ctrl+U
+
+        result = await _do_translate(buf, stack, status, config)
+
+        # Clear indicator
+        os.write(sys.stdout.fileno(), b"\r\x1b[2K")
+
+        if result:
+            try:
+                os.write(master_fd, result.encode("utf-8"))
+            except OSError:
+                pass
+
+        translating = False
+
+    def do_undo() -> None:
+        restored = _do_undo(stack, buf, status)
         if restored is not None:
-            text_area.text = restored
-            text_area.buffer.cursor_position = len(restored)
-        event.app.invalidate()
+            try:
+                os.write(master_fd, b"\x15")  # Ctrl+U
+                os.write(master_fd, restored.encode("utf-8"))
+            except OSError:
+                pass
 
-    @kb.add("c-c")
-    def handle_quit(event) -> None:
-        event.app.exit(result=text_area.text)
+    def handle_stdin() -> None:
+        """Our stdin → forward to child PTY (with hotkey interception)."""
+        nonlocal translating
+        try:
+            data = os.read(sys.stdin.fileno(), 1024)
+        except OSError:
+            loop.stop()
+            return
 
-    app: Application = Application(
-        layout=layout,
-        key_bindings=kb,
-        full_screen=True,
-        mouse_support=False,
-        style=Style.from_dict({"status": "reverse"}),
-    )
-    return app, text_area
+        if not data:
+            loop.stop()
+            return
 
+        # Ctrl+T: translate
+        if b"\x14" in data:
+            if not translating:
+                asyncio.ensure_future(do_translate())
+            return
+
+        # Ctrl+Z: undo
+        if b"\x1a" in data:
+            if not translating:
+                do_undo()
+            return
+
+        # Update shadow buffer (only when not translating)
+        if not translating:
+            buf.feed(data)
+
+        # Forward to child
+        try:
+            os.write(master_fd, data)
+        except OSError:
+            loop.stop()
+
+    loop.add_reader(master_fd, handle_child_output)
+    loop.add_reader(sys.stdin.fileno(), handle_stdin)
+    loop.add_signal_handler(signal.SIGWINCH, lambda: _set_winsize(master_fd))
+
+    # Run until child exits or loop stopped
+    try:
+        while True:
+            await asyncio.sleep(0.1)
+            # Check if child still alive
+            try:
+                result = os.waitpid(-1, os.WNOHANG)
+                if result[0] != 0:
+                    break
+            except ChildProcessError:
+                break
+    finally:
+        loop.remove_reader(master_fd)
+        loop.remove_reader(sys.stdin.fileno())
+
+
+# ── Entry point ────────────────────────────────────────────────────────────────
 
 def main() -> None:
     config_path = default_config_path()
@@ -100,16 +211,44 @@ def main() -> None:
         config = load_config(config_path)
         config.resolve_api_key()
     except ConfigError as e:
-        print(f"Configuration error: {e}", file=sys.stderr)
-        print(f"\nCreate a config at: {config_path}", file=sys.stderr)
-        print('\nExample:\n  provider = "openai"\n  model = "gpt-4.1-mini"\n  api_key_env = "OPENAI_API_KEY"',
-              file=sys.stderr)
+        print(f"tui-translator: {e}", file=sys.stderr)
+        print(f"\nCreate config at: {config_path}", file=sys.stderr)
+        print(
+            '\nExample:\n  provider = "openai"\n  model = "gpt-4.1-mini"'
+            '\n  api_key_env = "OPENAI_API_KEY"\n  target_cmd = ["claude"]',
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    app, _ = build_app(config)
-    result = app.run()
-    if result:
-        print(result)
+    cmd = config.target_cmd
+    if not shutil.which(cmd[0]):
+        print(f"tui-translator: command not found: {cmd[0]}", file=sys.stderr)
+        sys.exit(1)
+
+    # Fork with PTY
+    pid, master_fd = pty.fork()
+
+    if pid == 0:
+        # Child: exec target command
+        os.environ["PROMPT_TOOLKIT_NO_CPR"] = "1"
+        os.execvp(cmd[0], cmd)
+        # execvp never returns
+        sys.exit(1)
+
+    # Parent: set up raw mode and run proxy
+    _set_winsize(master_fd)
+    old_attrs = termios.tcgetattr(sys.stdin.fileno())
+    tty.setraw(sys.stdin.fileno())
+
+    try:
+        asyncio.run(_proxy_loop(master_fd, config))
+    finally:
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_attrs)
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
+        os.close(master_fd)
 
 
 if __name__ == "__main__":
