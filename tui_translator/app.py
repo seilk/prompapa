@@ -258,6 +258,10 @@ def main() -> None:
         )
         sys.exit(1)
 
+    if not sys.stdin.isatty():
+        print("tui-translator: stdin is not a TTY. Run directly in a terminal, not inside a pipe or IDE shell.", file=sys.stderr)
+        sys.exit(1)
+
     cmd = config.target_cmd
     if not shutil.which(cmd[0]):
         print(f"tui-translator: command not found: {cmd[0]}", file=sys.stderr)
