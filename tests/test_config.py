@@ -36,8 +36,25 @@ def test_load_config_with_overrides():
 
 def test_missing_required_field_raises():
     p = _write_toml('provider = "openai"')
+    with pytest.raises(ConfigError, match="api_key_env"):
+        load_config(p)
+
+def test_missing_model_for_llm_raises():
+    p = _write_toml("""
+        provider = "openai"
+        api_key_env = "OPENAI_API_KEY"
+    """)
     with pytest.raises(ConfigError, match="model"):
         load_config(p)
+
+def test_google_provider_no_model_required():
+    p = _write_toml("""
+        provider = "google"
+        api_key_env = "GOOGLE_API_KEY"
+    """)
+    cfg = load_config(p)
+    assert cfg.provider == "google"
+    assert cfg.model == ""
 
 def test_file_not_found_raises():
     with pytest.raises(ConfigError, match="not found"):

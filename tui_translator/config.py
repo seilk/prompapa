@@ -9,8 +9,8 @@ class ConfigError(Exception):
 @dataclass
 class AppConfig:
     provider: str
-    model: str
     api_key_env: str
+    model: str = ""
     hotkey_translate: str = "c-t"
     hotkey_undo: str = "c-z"
     preserve_backticks: bool = True
@@ -24,7 +24,7 @@ class AppConfig:
             )
         return key
 
-_REQUIRED = ("provider", "model", "api_key_env")
+_REQUIRED = ("provider", "api_key_env")
 
 def load_config(path: Path) -> AppConfig:
     if not path.exists():
@@ -34,10 +34,14 @@ def load_config(path: Path) -> AppConfig:
     for key in _REQUIRED:
         if key not in data:
             raise ConfigError(f"Missing required config field '{key}' in {path}")
+    provider = data["provider"]
+    # model is required for LLM providers, optional for google
+    if provider != "google" and "model" not in data:
+        raise ConfigError(f"Missing required config field 'model' in {path}")
     return AppConfig(
-        provider=data["provider"],
-        model=data["model"],
+        provider=provider,
         api_key_env=data["api_key_env"],
+        model=data.get("model", ""),
         hotkey_translate=data.get("hotkey_translate", "c-t"),
         hotkey_undo=data.get("hotkey_undo", "c-z"),
         preserve_backticks=data.get("preserve_backticks", True),
