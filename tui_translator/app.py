@@ -34,6 +34,18 @@ from pathlib import Path
 _ANSI_RE = re.compile(rb'\x1b\[[0-9;]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b.')
 
 
+def _read_with_timeout(fd: int, size: int = 4096, timeout: float = 0.3) -> bytes:
+    """Read from fd with timeout. Returns b'' if no data available within timeout."""
+    import select
+    try:
+        r, _, _ = select.select([fd], [], [], timeout)
+        if not r:
+            return b""
+        return os.read(fd, size)
+    except OSError:
+        return b""
+
+
 def _strip_ansi(data: bytes) -> str:
     return _ANSI_RE.sub(b'', data).decode('utf-8', errors='replace').strip()
 
@@ -123,58 +135,58 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
 
     async def do_translate() -> None:
         nonlocal translating
+        if translating:
+            return
         translating = True
+        loop.remove_reader(master_fd)
+        captured = ""
 
         try:
-            # Temporarily remove asyncio reader so we can do direct blocking reads
-            loop.remove_reader(master_fd)
+            # Drain any stale buffered data before issuing control sequences
+            while _read_with_timeout(master_fd, timeout=0.02):
+                pass
 
             # Step 1: Ctrl+U — clears line, saves to readline kill-ring
             os.write(master_fd, b"\x15")
             await asyncio.sleep(0.05)
-            os.read(master_fd, 4096)  # discard backspaces + clear sequence
+            _read_with_timeout(master_fd)  # discard backspaces + clear sequence
 
             # Step 2: Ctrl+Y — yanks text back; appears in child stdout
             os.write(master_fd, b"\x19")
             await asyncio.sleep(0.05)
 
-            # Step 3: Direct read — no asyncio reader competition
-            raw = os.read(master_fd, 4096)
+            # Step 3: Non-blocking read — no asyncio reader competition
+            raw = _read_with_timeout(master_fd)
             captured = _strip_ansi(raw)
 
-            # Step 4: If empty, nothing to translate
+            # Step 4: If empty, nothing to translate — finally will clean up
             if not captured.strip():
-                # Nothing was there — re-register reader and bail
-                loop.add_reader(master_fd, handle_child_output)
-                translating = False
-                return
-
-            # Step 5: Ctrl+U again — clear the yanked text (we have it now)
-            os.write(master_fd, b"\x15")
-            await asyncio.sleep(0.03)
-            os.read(master_fd, 4096)  # discard
+                captured = ""
+            else:
+                # Step 5: Ctrl+U again — clear the yanked text (we have it now)
+                os.write(master_fd, b"\x15")
+                await asyncio.sleep(0.03)
+                _read_with_timeout(master_fd)  # discard
 
         except OSError:
+            captured = ""
+        finally:
+            # Always re-register reader so child output flows normally
             loop.add_reader(master_fd, handle_child_output)
-            translating = False
-            return
 
-        # Re-register reader before async translation call
-        loop.add_reader(master_fd, handle_child_output)
-
-        # Show indicator
-        indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
-        os.write(sys.stdout.fileno(), indicator)
-
-        # Step 6: Translate
-        result = await _do_translate(captured, stack, buf, status, config)
-
-        # Clear indicator
-        os.write(sys.stdout.fileno(), b"\r\x1b[2K")
-
-        if result:
+        # Translation happens after reader is re-registered (child output flows during API call)
+        # translating=True still blocks re-entrant Ctrl+T
+        if captured.strip():
             try:
-                os.write(master_fd, result.encode("utf-8"))
+                indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
+                os.write(sys.stdout.fileno(), indicator)
+
+                result = await _do_translate(captured, stack, buf, status, config)
+
+                os.write(sys.stdout.fileno(), b"\r\x1b[2K")
+
+                if result:
+                    os.write(master_fd, result.encode("utf-8"))
             except OSError:
                 pass
 
