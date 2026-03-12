@@ -126,43 +126,47 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
         translating = True
 
         try:
+            # Temporarily remove asyncio reader so we can do direct blocking reads
+            loop.remove_reader(master_fd)
+
             # Step 1: Ctrl+U — clears line, saves to readline kill-ring
             os.write(master_fd, b"\x15")
-            await asyncio.sleep(0.03)  # let child process Ctrl+U
+            await asyncio.sleep(0.05)
+            os.read(master_fd, 4096)  # discard backspaces + clear sequence
 
-            # Step 2: Ctrl+Y — yanks text back; it appears in child stdout
+            # Step 2: Ctrl+Y — yanks text back; appears in child stdout
             os.write(master_fd, b"\x19")
-            await asyncio.sleep(0.05)  # let child flush the yanked text
+            await asyncio.sleep(0.05)
 
-            # Step 3: Read child stdout (non-blocking) to capture yanked text
-            flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
-            fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            try:
-                raw = os.read(master_fd, 4096)
-            except BlockingIOError:
-                raw = b""
-            finally:
-                fcntl.fcntl(master_fd, fcntl.F_SETFL, flags)
-
+            # Step 3: Direct read — no asyncio reader competition
+            raw = os.read(master_fd, 4096)
             captured = _strip_ansi(raw)
 
-            # Step 4: If empty, nothing to translate — restore the yank is a noop
+            # Step 4: If empty, nothing to translate
             if not captured.strip():
+                # Nothing was there — re-register reader and bail
+                loop.add_reader(master_fd, handle_child_output)
                 translating = False
                 return
 
             # Step 5: Ctrl+U again — clear the yanked text (we have it now)
             os.write(master_fd, b"\x15")
+            await asyncio.sleep(0.03)
+            os.read(master_fd, 4096)  # discard
 
         except OSError:
+            loop.add_reader(master_fd, handle_child_output)
             translating = False
             return
 
-        # Show indicator on our stdout
+        # Re-register reader before async translation call
+        loop.add_reader(master_fd, handle_child_output)
+
+        # Show indicator
         indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
         os.write(sys.stdout.fileno(), indicator)
 
-        # Step 6: Translate using captured text
+        # Step 6: Translate
         result = await _do_translate(captured, stack, buf, status, config)
 
         # Clear indicator
