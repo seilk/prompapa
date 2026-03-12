@@ -63,3 +63,32 @@ def test_missing_api_key_env_raises(monkeypatch):
     cfg = load_config(p)
     with pytest.raises(ConfigError, match="MISSING_KEY_XYZ"):
         cfg.resolve_api_key()
+
+def test_target_cmd_default():
+    p = _write_toml("""
+        provider = "openai"
+        model = "gpt-4.1-mini"
+        api_key_env = "OPENAI_API_KEY"
+    """)
+    cfg = load_config(p)
+    assert cfg.target_cmd == ["claude"]
+
+def test_target_cmd_custom():
+    p = _write_toml("""
+        provider = "openai"
+        model = "gpt-4.1-mini"
+        api_key_env = "OPENAI_API_KEY"
+        target_cmd = ["opencode"]
+    """)
+    cfg = load_config(p)
+    assert cfg.target_cmd == ["opencode"]
+
+def test_target_cmd_with_args():
+    p = _write_toml("""
+        provider = "openai"
+        model = "gpt-4.1-mini"
+        api_key_env = "OPENAI_API_KEY"
+        target_cmd = ["claude", "--no-color"]
+    """)
+    cfg = load_config(p)
+    assert cfg.target_cmd == ["claude", "--no-color"]

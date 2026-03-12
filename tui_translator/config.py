@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os, tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 class ConfigError(Exception):
@@ -14,6 +14,7 @@ class AppConfig:
     hotkey_translate: str = "c-t"
     hotkey_undo: str = "c-z"
     preserve_backticks: bool = True
+    target_cmd: list[str] = field(default_factory=lambda: ["claude"])
 
     def resolve_api_key(self) -> str:
         key = os.environ.get(self.api_key_env)
@@ -40,6 +41,7 @@ def load_config(path: Path) -> AppConfig:
         hotkey_translate=data.get("hotkey_translate", "c-t"),
         hotkey_undo=data.get("hotkey_undo", "c-z"),
         preserve_backticks=data.get("preserve_backticks", True),
+        target_cmd=data.get("target_cmd", ["claude"]),
     )
 
 def default_config_path() -> Path:
