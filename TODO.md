@@ -17,10 +17,19 @@ However, proper multi-target support requires:
 
 **Not starting until:** basic translation flow is stable and smoke-tested end-to-end.
 
+### Multiline input capture
+Currently only the last physical line is captured on Ctrl+T (Ctrl+U only kills current line).
+For full multiline support:
+- Need to iterate upward line-by-line: Ctrl+E+U → Ctrl+Y (capture) → Up → repeat until empty
+- Works in bash (tested), but prompt_toolkit (claude/opencode) Up arrow behavior in multiline
+  context needs verification before implementing
+- Risk: wrong implementation could break stable single-line translation
+
+**Prerequisite:** Test in actual claude session whether Up arrow navigates within multiline buffer
+or jumps to history. Only implement after confirming behavior.
+
 ### ShadowBuffer sync (history navigation, paste, mid-line cursor)
 Current Ctrl+U/Y capture pattern works for readline apps but has edge cases:
-- Cursor not at end of line when Ctrl+T pressed
-- Multiline input (only current physical line captured)
 - Apps that don't use readline kill-ring (unlikely given target set)
 
 ### English input detection → skip translation
