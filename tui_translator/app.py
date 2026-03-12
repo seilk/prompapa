@@ -131,6 +131,7 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
     buf = ShadowBuffer()
     status: dict[str, str] = {"msg": ""}
     translating = False
+    waiting_chord = False  # True after Ctrl+T, waiting for T or L
 
     def handle_child_output() -> None:
         """Child PTY output → our stdout."""
@@ -140,68 +141,121 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
         except OSError:
             loop.stop()
 
-    async def do_translate() -> None:
+    async def _capture_current_line() -> str:
+        """Capture current line via Ctrl+E + Ctrl+U + Ctrl+Y. Returns stripped text."""
+        # Drain stale data
+        while _read_with_timeout(master_fd, timeout=0.02):
+            pass
+
+        # Ctrl+E: move to end of line
+        os.write(master_fd, b"\x05")
+        await asyncio.sleep(0.03)
+        _read_with_timeout(master_fd, timeout=0.05)
+
+        # Ctrl+U: kill line → kill-ring
+        os.write(master_fd, b"\x15")
+        await asyncio.sleep(0.05)
+        _read_with_timeout(master_fd)  # discard backspaces
+
+        # Ctrl+Y: yank back → appears in stdout
+        os.write(master_fd, b"\x19")
+        await asyncio.sleep(0.05)
+        raw = _read_with_timeout(master_fd)
+        captured = _strip_ansi(raw)
+
+        if captured.strip():
+            # Ctrl+U: clear the yanked text (we have it now)
+            os.write(master_fd, b"\x15")
+            await asyncio.sleep(0.03)
+            _read_with_timeout(master_fd)
+
+        return captured
+
+    async def _capture_all_lines() -> str:
+        """
+        Capture entire multiline buffer by iterating upward line by line.
+        Uses Up arrow to move to previous lines, captures each via Ctrl+U/Y.
+        Returns lines joined with newline, in correct top-to-bottom order.
+        """
+        lines: list[str] = []
+
+        # Capture current (last) line first
+        line = await _capture_current_line()
+        if not line.strip():
+            return ""
+        lines.append(line)
+
+        # Walk upward collecting lines until Up arrow produces no new content
+        MAX_LINES = 20
+        for _ in range(MAX_LINES):
+            # Move up one line
+            os.write(master_fd, b"\x1b[A")  # Up arrow
+            await asyncio.sleep(0.08)
+            _read_with_timeout(master_fd, timeout=0.05)  # discard cursor movement
+
+            line = await _capture_current_line()
+            if not line.strip():
+                break
+            # Avoid collecting duplicate (Up arrow at top of buffer repeats last line)
+            if line == lines[-1]:
+                break
+            lines.append(line)
+
+        # lines are bottom-to-top; reverse for correct order
+        lines.reverse()
+        return "\n".join(lines)
+
+    async def _run_translation(captured: str) -> None:
+        """Translate captured text and inject result into child."""
+        try:
+            indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
+            os.write(sys.stdout.fileno(), indicator)
+
+            result = await _do_translate(captured, stack, buf, status, config)
+
+            os.write(sys.stdout.fileno(), b"\r\x1b[2K")
+
+            if result:
+                os.write(master_fd, result.encode("utf-8"))
+        except OSError:
+            pass
+
+    async def do_translate_line() -> None:
+        """Ctrl+T L — translate current line only."""
         nonlocal translating
         if translating:
             return
         translating = True
         loop.remove_reader(master_fd)
         captured = ""
-
         try:
-            # Drain any stale buffered data before issuing control sequences
-            while _read_with_timeout(master_fd, timeout=0.02):
-                pass
-
-            # Step 1: Ctrl+E — move cursor to end of line first
-            os.write(master_fd, b"\x05")
-            await asyncio.sleep(0.03)
-            _read_with_timeout(master_fd, timeout=0.05)  # discard cursor move output
-
-            # Step 2: Ctrl+U — clears whole line, saves to readline kill-ring
-            os.write(master_fd, b"\x15")
-            await asyncio.sleep(0.05)
-            _read_with_timeout(master_fd)  # discard backspaces + clear sequence
-
-            # Step 3: Ctrl+Y — yanks text back; appears in child stdout
-            os.write(master_fd, b"\x19")
-            await asyncio.sleep(0.05)
-
-            # Step 4: Non-blocking read — no asyncio reader competition
-            raw = _read_with_timeout(master_fd)
-            captured = _strip_ansi(raw)
-
-            # Step 5: If empty, nothing to translate — finally will clean up
-            if not captured.strip():
-                captured = ""
-            else:
-                # Step 6: Ctrl+U again — clear the yanked text (we have it now)
-                os.write(master_fd, b"\x15")
-                await asyncio.sleep(0.03)
-                _read_with_timeout(master_fd)  # discard
-
+            captured = await _capture_current_line()
         except OSError:
             captured = ""
         finally:
-            # Always re-register reader so child output flows normally
             loop.add_reader(master_fd, handle_child_output)
 
-        # Translation happens after reader is re-registered (child output flows during API call)
-        # translating=True still blocks re-entrant Ctrl+T
         if captured.strip():
-            try:
-                indicator = b"\r\x1b[2K[tui-translator: translating...]\r"
-                os.write(sys.stdout.fileno(), indicator)
+            await _run_translation(captured)
+        translating = False
 
-                result = await _do_translate(captured, stack, buf, status, config)
+    async def do_translate_all() -> None:
+        """Ctrl+T T — translate entire multiline buffer."""
+        nonlocal translating
+        if translating:
+            return
+        translating = True
+        loop.remove_reader(master_fd)
+        captured = ""
+        try:
+            captured = await _capture_all_lines()
+        except OSError:
+            captured = ""
+        finally:
+            loop.add_reader(master_fd, handle_child_output)
 
-                os.write(sys.stdout.fileno(), b"\r\x1b[2K")
-
-                if result:
-                    os.write(master_fd, result.encode("utf-8"))
-            except OSError:
-                pass
-
+        if captured.strip():
+            await _run_translation(captured)
         translating = False
 
     def do_undo() -> None:
@@ -216,7 +270,7 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
 
     def handle_stdin() -> None:
         """Our stdin → forward to child PTY (with hotkey interception)."""
-        nonlocal translating
+        nonlocal translating, waiting_chord
         try:
             data = os.read(sys.stdin.fileno(), 1024)
         except OSError:
@@ -227,10 +281,21 @@ async def _proxy_loop(master_fd: int, config: AppConfig) -> None:
             loop.stop()
             return
 
-        # Ctrl+T: translate
+        # Chord: waiting for second key after Ctrl+T
+        if waiting_chord:
+            waiting_chord = False
+            key = data[0:1]
+            if key in (b"t", b"T") and not translating:
+                asyncio.ensure_future(do_translate_all())
+            elif key in (b"l", b"L") and not translating:
+                asyncio.ensure_future(do_translate_line())
+            # anything else: discard (cancel chord)
+            return
+
+        # Ctrl+T: enter chord mode
         if b"\x14" in data:
             if not translating:
-                asyncio.ensure_future(do_translate())
+                waiting_chord = True
             return
 
         # Ctrl+Z: undo
