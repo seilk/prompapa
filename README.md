@@ -23,7 +23,7 @@ AI coding assistants carry an analogous constraint from the other direction. Res
 
 Two minds at cross-purposes. One that thinks clearest in its native tongue. One that reasons best in English.
 
-prompapa sits between them. Nothing more.
+Prompapa sits between them. Nothing more.
 
 ### References
 
@@ -106,6 +106,14 @@ At that point:
 4. Injects the English result via bracketed paste
 
 The child process never pauses. The UI never redraws. The text just... changes.
+
+## Uninstall
+
+```bash
+papa uninstall
+```
+
+Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## Development
 
