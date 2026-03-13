@@ -1,6 +1,6 @@
-# 🐼 prompapa
+# prompapa
 
-## 🚀 Install
+## Install
 
 Requires [uv](https://docs.astral.sh/uv/). Install it once, then:
 
@@ -8,64 +8,55 @@ Requires [uv](https://docs.astral.sh/uv/). Install it once, then:
 uv tool install git+https://github.com/your-org/prompapa
 ```
 
-That's it. The `papa` command is now globally available.
+## Setup
 
-## 🎮 Usage
+Run the onboarding wizard to configure your API key:
 
-Instead of running `claude` directly, run it through `papa`:
+```bash
+papa onboard
+```
+
+This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation API key.
+
+Don't have a key yet? The wizard walks you through getting one.
+
+## Usage
 
 ```bash
 papa claude
 ```
 
-Your tool opens exactly as normal. Same UI, same features, same everything. Now you just have two new hotkeys.
+Your tool opens exactly as normal. Two new hotkeys:
 
 | Hotkey | Action |
 |--------|--------|
-| `Ctrl+T` | Translate your current input to English |
-| `Ctrl+Y` | Undo — restore original text immediately |
+| `Ctrl+T` | Translate current input to English |
+| `Ctrl+Y` | Undo — restore original text |
 
-That's the entire interface. Two keys.
+## Configuration
 
-## ⚙️ Configuration
-
-Create `~/.config/prompapa/config.toml`:
+`~/.config/prompapa/config.toml`:
 
 ```toml
-provider = "openai"
-model = "gpt-4.1-mini"
-api_key_env = "OPENAI_API_KEY"
+provider = "google"
+api_key = "your-gcp-translation-api-key"
+target_cmd = ["claude"]
+hotkey_translate = "c-t"
+hotkey_undo = "c-z"
+preserve_backticks = true
+```
+
+`api_key_env` is also supported if you prefer to keep the key in an environment variable:
+
+```toml
+provider = "google"
+api_key_env = "GOOGLE_API_KEY"
 target_cmd = ["claude"]
 ```
 
-### Supported providers
+### preserve_backticks
 
-**OpenAI**
-```toml
-provider = "openai"
-model = "gpt-4.1-mini"
-api_key_env = "OPENAI_API_KEY"
-```
-
-**Anthropic**
-```toml
-provider = "anthropic"
-model = "claude-3-haiku-20240307"
-api_key_env = "ANTHROPIC_API_KEY"
-```
-
-**Google**
-```toml
-provider = "google"
-model = "gemini-2.0-flash"
-api_key_env = "GOOGLE_API_KEY"
-```
-
-Prefer to hardcode the key? Use `api_key = "sk-..."` instead of `api_key_env`. Your call.
-
-### Preserve backtick tokens
-
-Got code paths or variables mixed into your prompt? This keeps them untouched:
+Keeps backtick-wrapped tokens untranslated:
 
 ```toml
 preserve_backticks = true
@@ -73,40 +64,20 @@ preserve_backticks = true
 
 `` `src/auth.ts` `` stays exactly as-is after translation.
 
-## 🔧 How it works
+## How it works
 
-prompapa forks your target CLI into a **PTY (pseudo-terminal)**, then sits between your keyboard and that process. Every keystroke flows through transparently — until you hit `Ctrl+T`.
+prompapa forks your target CLI into a **PTY (pseudo-terminal)**, sitting transparently between your keyboard and the process. Every keystroke passes through unchanged — until you hit `Ctrl+T`.
 
 At that point:
 
-1. It reads your current input directly off the terminal screen using a `pyte` screen tracker
-2. Fires an async API call to your LLM of choice
-3. Erases the old text with precisely-counted backspaces (no screen refresh)
+1. Reads current input off the terminal screen via a `pyte` screen tracker
+2. Fires an async call to Google Cloud Translation API
+3. Erases the original text with precisely-counted backspaces (no screen refresh)
 4. Injects the English result via bracketed paste
 
-The child process never pauses. The UI never redraws. You never see a flash. The text just... changes.
+The child process never pauses. The UI never redraws. The text just... changes.
 
-## 📦 Full config reference
-
-```toml
-# Provider: "openai" | "anthropic" | "google"
-provider = "openai"
-
-# Model for translation (pick something fast — this runs on every Ctrl+T)
-model = "gpt-4.1-mini"
-
-# API key — one of these two:
-api_key = "sk-..."           # hardcoded
-api_key_env = "OPENAI_API_KEY"  # from environment (recommended)
-
-# The CLI tool to wrap
-target_cmd = ["claude"]
-
-# Keep backtick-wrapped tokens untranslated
-preserve_backticks = true
-```
-
-## 🧪 Development
+## Development
 
 ```bash
 git clone https://github.com/your-org/prompapa
@@ -121,7 +92,7 @@ Run locally without installing:
 uv run papa claude
 ```
 
-## 📝 TODO
+## TODO
 
 - `opencode` support
-- Full LLM API translation proxy support (LLM API를 통한 번역 지원)
+- LLM API translation support
