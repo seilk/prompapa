@@ -26,6 +26,7 @@ import shutil
 import signal
 import struct
 import sys
+from .onboard import run_onboard
 import termios
 import tty
 import unicodedata
@@ -245,6 +246,10 @@ async def _proxy_loop(
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "onboard":
+        run_onboard()
+        sys.exit(0)
+
     _load_dotenv(Path(".env"))
     config_path = default_config_path()
     try:
