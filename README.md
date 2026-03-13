@@ -107,14 +107,6 @@ At that point:
 
 The child process never pauses. The UI never redraws. The text just... changes.
 
-## Uninstall
-
-```bash
-papa uninstall
-```
-
-Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
-
 ## Development
 
 ```bash
@@ -129,6 +121,14 @@ Run locally without installing:
 ```bash
 uv run papa claude
 ```
+
+## Uninstall
+
+```bash
+papa uninstall
+```
+
+Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
 - [ ] `opencode` support
