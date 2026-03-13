@@ -176,5 +176,6 @@ Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
 - [ ] `opencode` support
+- [ ] `codex` support
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
