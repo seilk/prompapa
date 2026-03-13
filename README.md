@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/prompapa-banner.png" alt="prompapa" width="800" />
+  <img src="assets/prompapa-banner.png" alt="Prompapa" width="800" />
 </p>
 
 <p align="center">
@@ -96,7 +96,7 @@ preserve_backticks = true
 
 ## How it works
 
-prompapa forks your target CLI into a **PTY (pseudo-terminal)**, sitting transparently between your keyboard and the process. Every keystroke passes through unchanged — until you hit `Ctrl+T`.
+Prompapa forks your target CLI into a **PTY (pseudo-terminal)**, sitting transparently between your keyboard and the process. Every keystroke passes through unchanged — until you hit `Ctrl+T`.
 
 At that point:
 
