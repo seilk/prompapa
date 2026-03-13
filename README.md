@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>Type in your language. Hit `Ctrl+T` in **Claude Code**. Watch it become perfect English.</em>
+  <em>Type in your language. Hit `Ctrl+T` in <strong>Claude Code</strong>. Watch it become perfect English.</em>
 </p>
 
 <p align="center">
