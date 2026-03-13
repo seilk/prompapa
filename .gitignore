@@ -7,3 +7,9 @@ dist/
 .uv/
 .env
 .gitworktrees/
+AGENTS.md
+CAPTURE-RESEARCH.md
+MVP-BUILD-SPEC.md
+STABILITY-ANALYSIS.md
+.omc/
+.sisyphus/

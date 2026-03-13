@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"uv run python -c \\\"\\nimport pty, os, asyncio, sys, re\\n\\nANSI_RE = re.compile(\\n    rb'\\\\x1b\\\\[[\\\\x30-\\\\x3f]*[\\\\x20-\\\\x2f]*[\\\\x40-\\\\x7e]'\\n    rb'|\\\\x1b\\\\][^\\\\x07\\\\x1b]*(?:\\\\x07|\\\\x1b\\\\\\\\\\...",
-  "error": "Exit code 1\nwarning: The `tool.uv.dev-dependencies` field (used in `pyproject.toml`) is deprecated and will be removed in a future release; use `dependency-groups.dev` instead\n  File \"<string>\", line 25\n    os.write(master_fd, b'echo \\'  )\n                        ^\nSyntaxError: unterminated string literal (detected at line 25)",
-  "timestamp": "2026-03-12T17:35:48.276Z",
-  "retry_count": 1
-}
