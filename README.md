@@ -16,24 +16,32 @@
 
 <table>
   <tr>
-    <td align="center"><b>Korean</b></td>
-    <td align="center"><b>Japanese</b></td>
-    <td align="center"><b>Chinese</b></td>
+    <td align="center">
+      <video src="assets/prompapa-demo-ko.mp4" width="400" controls></video>
+      <br/>🇰🇷 Korean
+    </td>
+    <td align="center">
+      <video src="assets/prompapa-demo-jp.mp4" width="400" controls></video>
+      <br/>🇯🇵 Japanese
+    </td>
+    <td align="center">
+      <video src="assets/prompapa-demo-cn.mp4" width="400" controls></video>
+      <br/>🇨🇳 Chinese
+    </td>
   </tr>
   <tr>
-    <td><video src="assets/prompapa-demo-ko.mp4" width="260" controls></video></td>
-    <td><video src="assets/prompapa-demo-jp.mp4" width="260" controls></video></td>
-    <td><video src="assets/prompapa-demo-cn.mp4" width="260" controls></video></td>
-  </tr>
-  <tr>
-    <td align="center"><b>French</b></td>
-    <td align="center"><b>Spanish</b></td>
-    <td align="center"><b>German</b></td>
-  </tr>
-  <tr>
-    <td><video src="assets/prompapa-demo-fr.mp4" width="260" controls></video></td>
-    <td><video src="assets/prompapa-demo-es.mp4" width="260" controls></video></td>
-    <td><video src="assets/prompapa-demo-de.mp4" width="260" controls></video></td>
+    <td align="center">
+      <video src="assets/prompapa-demo-fr.mp4" width="400" controls></video>
+      <br/>🇫🇷 French
+    </td>
+    <td align="center">
+      <video src="assets/prompapa-demo-es.mp4" width="400" controls></video>
+      <br/>🇪🇸 Spanish
+    </td>
+    <td align="center">
+      <video src="assets/prompapa-demo-de.mp4" width="400" controls></video>
+      <br/>🇩🇪 German
+    </td>
   </tr>
 </table>
 
