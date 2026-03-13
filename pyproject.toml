@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-prompapa = "prompapa.app:main"
+papa = "prompapa.app:main"
 prompapa-edit = "prompapa.editor:main"
 
 [build-system]
