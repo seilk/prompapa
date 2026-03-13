@@ -28,6 +28,7 @@ import struct
 import sys
 from .onboard import run_onboard
 from .uninstall import run_uninstall
+from .update import run_update
 import termios
 import tty
 import unicodedata
@@ -252,6 +253,9 @@ def main() -> None:
         sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
         run_uninstall()
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "update":
+        run_update()
         sys.exit(0)
 
     _load_dotenv(Path(".env"))

@@ -158,6 +158,14 @@ Ejecutar localmente sin instalar:
 uv run papa claude
 ```
 
+## Actualización
+
+```bash
+papa update
+```
+
+Descarga y reinstala la última versión desde GitHub.
+
 ## Desinstalación
 
 ```bash

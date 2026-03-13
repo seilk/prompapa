@@ -91,8 +91,9 @@ The "Why This Exists" section cites 4 academic papers and uses a deliberately de
 10. Configuration (+ preserve_backticks)
 11. How it works
 12. Development
-13. Uninstall
-14. TODO
+13. Update
+14. Uninstall
+15. TODO
 
 Do not reorder, rename, or skip sections between language files.
 

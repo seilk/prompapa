@@ -158,6 +158,14 @@ uv run pytest -v
 uv run papa claude
 ```
 
+## Обновление
+
+```bash
+papa update
+```
+
+Загружает и переустанавливает последнюю версию с GitHub.
+
 ## Удаление
 
 ```bash

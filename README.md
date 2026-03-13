@@ -158,6 +158,14 @@ Run locally without installing:
 uv run papa claude
 ```
 
+## Update
+
+```bash
+papa update
+```
+
+Pulls and reinstalls the latest version from GitHub.
+
 ## Uninstall
 
 ```bash

@@ -158,6 +158,14 @@ uv run pytest -v
 uv run papa claude
 ```
 
+## 更新
+
+```bash
+papa update
+```
+
+从 GitHub 拉取并重新安装最新版本。
+
 ## 卸载
 
 ```bash

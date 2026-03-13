@@ -158,6 +158,14 @@ Lokal ohne Installation ausführen:
 uv run papa claude
 ```
 
+## Aktualisierung
+
+```bash
+papa update
+```
+
+Lädt die neueste Version von GitHub herunter und installiert sie neu.
+
 ## Deinstallation
 
 ```bash
