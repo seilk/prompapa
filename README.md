@@ -17,29 +17,29 @@
 <table>
   <tr>
     <td align="center">
-      <video src="assets/prompapa-demo-ko.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-ko.gif" width="400" />
       <br/>🇰🇷 Korean
     </td>
     <td align="center">
-      <video src="assets/prompapa-demo-jp.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-jp.gif" width="400" />
       <br/>🇯🇵 Japanese
     </td>
     <td align="center">
-      <video src="assets/prompapa-demo-cn.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-cn.gif" width="400" />
       <br/>🇨🇳 Chinese
     </td>
   </tr>
   <tr>
     <td align="center">
-      <video src="assets/prompapa-demo-fr.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-fr.gif" width="400" />
       <br/>🇫🇷 French
     </td>
     <td align="center">
-      <video src="assets/prompapa-demo-es.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-es.gif" width="400" />
       <br/>🇪🇸 Spanish
     </td>
     <td align="center">
-      <video src="assets/prompapa-demo-de.mp4" width="400" controls></video>
+      <img src="assets/prompapa-demo-de.gif" width="400" />
       <br/>🇩🇪 German
     </td>
   </tr>
