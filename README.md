@@ -45,7 +45,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Press <code>Ctrl+T</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</strong></em></p>
+<p align="center"><em><strong>Type in <em>any language</em> — Press <code>Ctrl+T</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</strong></em></p>
 
 ## Why This Exists
 
