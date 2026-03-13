@@ -2,6 +2,16 @@
   <img src="assets/prompapa-banner.png" alt="prompapa" width="600" />
 </p>
 
+<p align="center">
+  <em>Type in any language. Hit Ctrl+T. Watch it become perfect English.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/install-uv-blueviolet" alt="uv" />
+  <img src="https://img.shields.io/badge/translation-Google_Cloud-green" alt="Google Cloud Translation" />
+</p>
+
 # prompapa
 
 ## Install
