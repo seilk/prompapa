@@ -45,6 +45,8 @@
   </tr>
 </table>
 
+<p align="center"><em>Press <code>Ctrl+T</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</em></p>
+
 ## Why This Exists
 
 Language is not a neutral container for thought. The words we reach for first, the structure we impose before we even know what we mean, the instinct that precedes articulation: these are native. Forcing that process through a second language does not merely slow it down. It quietly reshapes it.
