@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/prompapa-banner.png" alt="Prompapa" width="800" />
+  <img src="assets/prompapa-banner.png" alt="prompapa" width="800" />
 </p>
 
 <p align="center">
