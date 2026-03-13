@@ -1,4 +1,4 @@
-# tui-translator
+# prompapa
 
 A terminal TUI for rewriting Korean/mixed-language prompts into English,
 optimized for AI coding assistants.
@@ -13,16 +13,16 @@ needed, then press **Ctrl+C** to exit and print the result to stdout.
 
     # From source with uv:
     git clone <repo>
-    cd tui-translator
+    cd prompapa
     uv sync
-    uv run tui-translator
+    uv run prompapa
 
     # Or install as tool:
     uv tool install git+<repo>
 
 ## Config
 
-Create `~/.config/tui-translator/config.toml`:
+Create `~/.config/prompapa/config.toml`:
 
 ```toml
 provider = "openai"
@@ -68,7 +68,7 @@ api_key_env = "ANTHROPIC_API_KEY"
 
 ## Usage example
 
-1. Run `tui-translator`
+1. Run `prompapa`
 2. Type: `이 버그 원인 찾아서 고쳐줘. src/auth.ts 건드리지마.`
 3. Press `Ctrl+T`
 4. Buffer becomes: `Find the root cause of this bug and fix it. Do not touch src/auth.ts.`

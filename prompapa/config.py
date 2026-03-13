@@ -79,4 +79,4 @@ def load_config(path: Path) -> AppConfig:
 
 
 def default_config_path() -> Path:
-    return Path.home() / ".config" / "tui-translator" / "config.toml"
+    return Path.home() / ".config" / "prompapa" / "config.toml"

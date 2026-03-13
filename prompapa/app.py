@@ -1,5 +1,5 @@
 """
-PTY proxy for tui-translator.
+PTY proxy for prompapa.
 
 Wraps a target CLI app (e.g. `claude`, `opencode`) in a PTY, forwarding all
 input/output transparently.
@@ -31,17 +31,17 @@ import tty
 import unicodedata
 from pathlib import Path
 
-from tui_translator.adapters import TargetAdapter, get_adapter
-from tui_translator.screen import ScreenTracker
-from tui_translator.config import (
+from prompapa.adapters import TargetAdapter, get_adapter
+from prompapa.screen import ScreenTracker
+from prompapa.config import (
     AppConfig,
     ConfigError,
     default_config_path,
     load_config,
     _load_dotenv,
 )
-from tui_translator.masking import mask_tokens, unmask_tokens
-from tui_translator.translator import TranslationError, rewrite_to_english
+from prompapa.masking import mask_tokens, unmask_tokens
+from prompapa.translator import TranslationError, rewrite_to_english
 
 # ── Pure logic helpers (unit-testable) ────────────────────────────────────────
 
@@ -251,7 +251,7 @@ def main() -> None:
         config = load_config(config_path)
         config.resolve_api_key()
     except ConfigError as e:
-        print(f"tui-translator: {e}", file=sys.stderr)
+        print(f"prompapa: {e}", file=sys.stderr)
         print(f"\nCreate config at: {config_path}", file=sys.stderr)
         print(
             '\nExample:\n  provider = "openai"\n  model = "gpt-4.1-mini"'
@@ -262,7 +262,7 @@ def main() -> None:
 
     if not sys.stdin.isatty():
         print(
-            "tui-translator: stdin is not a TTY. Run directly in a terminal, not inside a pipe or IDE shell.",
+            "prompapa: stdin is not a TTY. Run directly in a terminal, not inside a pipe or IDE shell.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -278,11 +278,11 @@ def main() -> None:
     try:
         adapter = get_adapter(target_name)
     except ValueError as e:
-        print(f"tui-translator: {e}", file=sys.stderr)
+        print(f"prompapa: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not shutil.which(cmd[0]):
-        print(f"tui-translator: command not found: {cmd[0]}", file=sys.stderr)
+        print(f"prompapa: command not found: {cmd[0]}", file=sys.stderr)
         sys.exit(1)
 
     pid, master_fd = pty.fork()

@@ -2,12 +2,12 @@
 Tests for the PTY proxy helper functions.
 The proxy loop itself requires a real PTY and is tested manually.
 """
+
 import pytest
 from unittest.mock import AsyncMock, patch
-from tui_translator.app import _do_translate, _do_undo
-from tui_translator.buffer import ShadowBuffer
-from tui_translator.state import UndoStack
-from tui_translator.config import AppConfig
+from prompapa.app import _display_width, _translate_text
+from prompapa.config import AppConfig
+from prompapa.translator import TranslationError
 
 
 def _cfg(monkeypatch) -> AppConfig:
@@ -19,107 +19,59 @@ def _cfg(monkeypatch) -> AppConfig:
     )
 
 
-async def test_do_translate_returns_translated_text(monkeypatch):
-    cfg = _cfg(monkeypatch)
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
+def test_display_width_ascii():
+    assert _display_width("hello") == 5
 
+
+def test_display_width_korean():
+    assert _display_width("안녕하세요") == 10
+
+
+def test_display_width_mixed():
+    assert _display_width("hello 안녕") == 10
+
+
+def test_display_width_empty():
+    assert _display_width("") == 0
+
+
+async def test_translate_text_returns_translated(monkeypatch):
+    cfg = _cfg(monkeypatch)
     with patch(
-        "tui_translator.app.rewrite_to_english",
+        "prompapa.app.rewrite_to_english",
         new=AsyncMock(return_value="Fix this bug."),
     ):
-        result = await _do_translate("이 버그 고쳐줘", stack, buf, status, cfg)
-
+        result = await _translate_text("이 버그 고쳐줘", cfg)
     assert result == "Fix this bug."
-    assert buf.text() == "Fix this bug."
 
 
-async def test_do_translate_pushes_original_to_undo_stack(monkeypatch):
+async def test_translate_text_raises_on_api_error(monkeypatch):
     cfg = _cfg(monkeypatch)
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
-
     with patch(
-        "tui_translator.app.rewrite_to_english",
-        new=AsyncMock(return_value="Fix this bug."),
-    ):
-        await _do_translate("이 버그 고쳐줘", stack, buf, status, cfg)
-
-    assert stack.can_undo()
-    assert stack.pop() == "이 버그 고쳐줘"
-
-
-async def test_do_translate_on_api_error_preserves_buffer(monkeypatch):
-    from tui_translator.translator import TranslationError
-    cfg = _cfg(monkeypatch)
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
-
-    with patch(
-        "tui_translator.app.rewrite_to_english",
+        "prompapa.app.rewrite_to_english",
         new=AsyncMock(side_effect=TranslationError("API error")),
     ):
-        result = await _do_translate("이 버그 고쳐줘", stack, buf, status, cfg)
-
-    assert result == "이 버그 고쳐줘"
-    assert not stack.can_undo()
-    assert "error" in status["msg"].lower()
+        with pytest.raises(TranslationError):
+            await _translate_text("이 버그 고쳐줘", cfg)
 
 
-async def test_do_translate_with_backtick_masking(monkeypatch):
+async def test_translate_text_preserves_backticks(monkeypatch):
     cfg = _cfg(monkeypatch)
     cfg.preserve_backticks = True
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
-
     with patch(
-        "tui_translator.app.rewrite_to_english",
+        "prompapa.app.rewrite_to_english",
         new=AsyncMock(return_value="Please run __MASK_0__"),
     ):
-        result = await _do_translate("실행해줘 `npm test`", stack, buf, status, cfg)
-
+        result = await _translate_text("실행해줘 `npm test`", cfg)
     assert "`npm test`" in result
-    assert "`npm test`" in buf.text()
 
 
-async def test_do_translate_empty_buffer_is_noop(monkeypatch):
+async def test_translate_text_without_masking(monkeypatch):
     cfg = _cfg(monkeypatch)
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
-
-    with patch("tui_translator.app.rewrite_to_english") as mock_api:
-        result = await _do_translate("", stack, buf, status, cfg)
-
-    mock_api.assert_not_called()
-    assert result == ""
-    assert not stack.can_undo()
-
-
-def test_do_undo_restores_previous_text():
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    buf.set_text("translated text")
-    stack.push("original korean text")
-    status = {"msg": ""}
-
-    result = _do_undo(stack, buf, status)
-
-    assert result == "original korean text"
-    assert buf.text() == "original korean text"
-    assert not stack.can_undo()
-
-
-def test_do_undo_on_empty_stack_returns_none():
-    stack = UndoStack()
-    buf = ShadowBuffer()
-    status = {"msg": ""}
-
-    result = _do_undo(stack, buf, status)
-
-    assert result is None
-    assert "nothing" in status["msg"].lower()
+    cfg.preserve_backticks = False
+    with patch(
+        "prompapa.app.rewrite_to_english",
+        new=AsyncMock(return_value="Run npm test"),
+    ):
+        result = await _translate_text("실행해줘 `npm test`", cfg)
+    assert result == "Run npm test"

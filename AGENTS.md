@@ -1,4 +1,4 @@
-# AGENTS.md — tui-translator Development Guidelines
+# AGENTS.md — prompapa Development Guidelines
 
 ## Commit Discipline
 
@@ -21,12 +21,12 @@
 ## Project Context
 
 - **Language**: Python (mainline). Go/Rust spikes exist as git worktrees but are NOT the active path.
-- **Entry point**: `uv run tui-translator <cmd>` (e.g. `tui-translator claude`)
-- **Config**: `~/.config/tui-translator/config.toml` — supports `api_key` directly or `api_key_env` as fallback.
+- **Entry point**: `uv run prompapa <cmd>` (e.g. `prompapa claude`)
+- **Config**: `~/.config/prompapa/config.toml` — supports `api_key` directly or `api_key_env` as fallback.
 - **Key files**:
-  - `tui_translator/app.py` — PTY proxy, hotkey handling, translation flow
-  - `tui_translator/config.py` — config loading and API key resolution
-  - `tui_translator/translator.py` — LLM API calls
-  - `tui_translator/buffer.py` — input buffer management
+  - `prompapa/app.py` — PTY proxy, hotkey handling, translation flow
+  - `prompapa/config.py` — config loading and API key resolution
+  - `prompapa/translator.py` — LLM API calls
+  - `prompapa/buffer.py` — input buffer management
 - **Tests**: `uv run pytest -v`
 - **Zero-refresh UX is a hard requirement** — no terminal flicker or screen refresh during translation.

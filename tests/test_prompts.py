@@ -1,4 +1,4 @@
-from tui_translator.prompts import SYSTEM_PROMPT, build_user_message
+from prompapa.prompts import SYSTEM_PROMPT, build_user_message
 
 def test_system_prompt_is_nonempty_string():
     assert isinstance(SYSTEM_PROMPT, str) and len(SYSTEM_PROMPT) > 50

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import httpx
-from tui_translator.config import AppConfig
-from tui_translator.prompts import SYSTEM_PROMPT, build_user_message
+from prompapa.config import AppConfig
+from prompapa.prompts import SYSTEM_PROMPT, build_user_message
 
 _GOOGLE_URL = "https://translation.googleapis.com/language/translate/v2"
 _OPENAI_URL = "https://api.openai.com/v1/chat/completions"

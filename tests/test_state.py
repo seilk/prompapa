@@ -1,5 +1,5 @@
 import pytest
-from tui_translator.state import UndoStack
+from prompapa.state import UndoStack
 
 def test_empty_stack_has_no_previous():
     assert not UndoStack().can_undo()

@@ -1,7 +1,7 @@
 import pytest, httpx
 from unittest.mock import AsyncMock, MagicMock, patch
-from tui_translator.translator import rewrite_to_english, TranslationError
-from tui_translator.config import AppConfig
+from prompapa.translator import rewrite_to_english, TranslationError
+from prompapa.config import AppConfig
 
 
 def _cfg(**kw) -> AppConfig:

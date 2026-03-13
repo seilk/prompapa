@@ -1,7 +1,7 @@
 import os, tempfile, textwrap
 from pathlib import Path
 import pytest
-from tui_translator.config import load_config, ConfigError, AppConfig
+from prompapa.config import load_config, ConfigError, AppConfig
 
 
 def _write_toml(content: str) -> Path:

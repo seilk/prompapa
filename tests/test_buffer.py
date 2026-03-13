@@ -1,4 +1,4 @@
-from tui_translator.buffer import ShadowBuffer
+from prompapa.buffer import ShadowBuffer
 
 
 def test_empty_buffer():
@@ -104,3 +104,55 @@ def test_mixed_korean_english():
     b = ShadowBuffer()
     b.feed("이 버그 fix해줘".encode("utf-8"))
     assert b.text() == "이 버그 fix해줘"
+
+
+def test_stale_default_false():
+    b = ShadowBuffer()
+    assert b.stale is False
+
+
+def test_mark_stale_and_fresh():
+    b = ShadowBuffer()
+    assert b.stale is False
+    b.mark_stale()
+    assert b.stale is True
+    b.mark_fresh()
+    assert b.stale is False
+
+
+def test_enter_clears_buffer_and_marks_fresh():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.mark_stale()
+    assert b.text() == "hello"
+    assert b.stale is True
+    b.feed(b"\x0d")  # Enter
+    assert b.text() == ""
+    assert b.stale is False
+
+
+def test_ctrl_j_adds_newline():
+    b = ShadowBuffer()
+    b.feed(b"line1")
+    b.feed(b"\x0a")  # Ctrl+J
+    b.feed(b"line2")
+    assert b.text() == "line1\nline2"
+
+
+def test_set_text_marks_fresh():
+    b = ShadowBuffer()
+    b.mark_stale()
+    assert b.stale is True
+    b.set_text("new text")
+    assert b.stale is False
+    assert b.text() == "new text"
+
+
+def test_clear_marks_fresh():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.mark_stale()
+    assert b.stale is True
+    b.clear()
+    assert b.stale is False
+    assert b.text() == ""

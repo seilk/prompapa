@@ -17,6 +17,20 @@ class ShadowBuffer:
 
     def __init__(self) -> None:
         self._chars: list[str] = []
+        self._stale: bool = False
+
+    @property
+    def stale(self) -> bool:
+        """Return whether the buffer is marked as stale."""
+        return self._stale
+
+    def mark_stale(self) -> None:
+        """Mark the buffer as stale."""
+        self._stale = True
+
+    def mark_fresh(self) -> None:
+        """Mark the buffer as fresh."""
+        self._stale = False
 
     def feed(self, data: bytes) -> None:
         """Process raw bytes from stdin and update internal state."""
@@ -25,10 +39,10 @@ class ShadowBuffer:
             b = data[i]
 
             # Bracketed paste start: ESC[200~
-            if data[i:i+6] == b"\x1b[200~":
+            if data[i : i + 6] == b"\x1b[200~":
                 end = data.find(b"\x1b[201~", i + 6)
                 if end != -1:
-                    paste = data[i+6:end].decode("utf-8", errors="replace")
+                    paste = data[i + 6 : end].decode("utf-8", errors="replace")
                     self._chars.extend(paste)
                     i = end + 6
                 else:
@@ -36,18 +50,31 @@ class ShadowBuffer:
                 continue
 
             # Escape sequence: ESC followed by optional '[' and params, ending at final byte (0x40-0x7e)
-            if b == 0x1b:
+            if b == 0x1B:
                 j = i + 1
                 # Skip optional '[' or 'O' introducer
-                if j < len(data) and data[j] in (0x5b, 0x4f):  # '[' or 'O'
+                if j < len(data) and data[j] in (0x5B, 0x4F):  # '[' or 'O'
                     j += 1
                 # Skip parameter bytes (0x20-0x3f) and intermediate bytes (0x20-0x2f)
                 while j < len(data) and data[j] < 0x40:
                     j += 1
                 # Skip final byte (0x40-0x7e)
-                if j < len(data) and 0x40 <= data[j] <= 0x7e:
+                if j < len(data) and 0x40 <= data[j] <= 0x7E:
                     j += 1
                 i = j
+                continue
+
+            # Enter (0x0d): clear buffer and mark fresh (submission = new empty input)
+            if b == 0x0D:
+                self._chars.clear()
+                self._stale = False
+                i += 1
+                continue
+
+            # Ctrl+J (0x0a): append newline (multiline within input)
+            if b == 0x0A:
+                self._chars.append("\n")
+                i += 1
                 continue
 
             # Ctrl+U: clear all
@@ -68,7 +95,7 @@ class ShadowBuffer:
                 continue
 
             # Backspace (DEL 0x7f or BS 0x08)
-            if b in (0x7f, 0x08):
+            if b in (0x7F, 0x08):
                 if self._chars:
                     self._chars.pop()
                 i += 1
@@ -77,17 +104,17 @@ class ShadowBuffer:
             # Multibyte UTF-8
             if b >= 0x80:
                 # Determine sequence length
-                if b >= 0xf0:
+                if b >= 0xF0:
                     seq_len = 4
-                elif b >= 0xe0:
+                elif b >= 0xE0:
                     seq_len = 3
-                elif b >= 0xc0:
+                elif b >= 0xC0:
                     seq_len = 2
                 else:
                     # Continuation byte alone — skip
                     i += 1
                     continue
-                raw = data[i:i+seq_len]
+                raw = data[i : i + seq_len]
                 try:
                     ch = raw.decode("utf-8")
                     self._chars.append(ch)
@@ -97,7 +124,7 @@ class ShadowBuffer:
                 continue
 
             # Printable ASCII (0x20–0x7e)
-            if 0x20 <= b <= 0x7e:
+            if 0x20 <= b <= 0x7E:
                 self._chars.append(chr(b))
                 i += 1
                 continue
@@ -112,7 +139,9 @@ class ShadowBuffer:
     def clear(self) -> None:
         """Clear the buffer."""
         self._chars.clear()
+        self._stale = False
 
     def set_text(self, text: str) -> None:
         """Replace buffer content with given text."""
         self._chars = list(text)
+        self._stale = False

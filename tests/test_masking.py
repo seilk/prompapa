@@ -1,4 +1,4 @@
-from tui_translator.masking import mask_tokens, unmask_tokens, MaskContext
+from prompapa.masking import mask_tokens, unmask_tokens, MaskContext
 
 def test_no_backticks_unchanged():
     ctx = mask_tokens("hello world")
