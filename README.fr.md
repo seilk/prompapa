@@ -49,11 +49,11 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Tapez dans <em>n'importe quelle langue</em> — Appuyez sur <code>Ctrl+T</code> pour traduire en anglais. Appuyez sur <code>Ctrl+Y</code> pour annuler.</strong></em></p>
+<p align="center"><em><strong>Tapez dans <em>n'importe quelle langue</em>. Appuyez sur <code>Ctrl+T</code> pour traduire en anglais. Appuyez sur <code>Ctrl+Y</code> pour annuler.</strong></em></p>
 
 ## Pourquoi cela existe
 
-La langue n'est pas un contenant neutre pour la pensée. Les mots auxquels on pense en premier, la structure qu'on impose avant même de savoir ce qu'on veut dire, l'instinct qui précède l'articulation — tout cela est natif. Forcer ce processus à travers une seconde langue ne fait pas que le ralentir. Cela le remodèle silencieusement.
+La langue n'est pas un contenant neutre pour la pensée. Les mots auxquels on pense en premier, la structure qu'on impose avant même de savoir ce qu'on veut dire, l'instinct qui précède l'articulation. Tout cela est natif. Forcer ce processus à travers une seconde langue ne fait pas que le ralentir. Cela le remodèle silencieusement.
 
 Les assistants de codage IA portent une contrainte analogue depuis la direction opposée. La recherche confirme ce que beaucoup ont pressenti : ces modèles présentent un biais structurel envers l'anglais, où la même intention exprimée dans une langue non anglaise produit des réponses mesurables plus faibles [[1]](https://arxiv.org/abs/2504.11833). Le biais est plus profond que le vocabulaire de surface. Des analyses représentationnelles des grands modèles de raisonnement montrent que leurs chemins de raisonnement internes sont centrés sur l'anglais par architecture, pas seulement par les données d'entraînement. Quelle que soit la langue dans laquelle un prompt arrive, le modèle converge vers un espace latent de forme anglaise avant de commencer à raisonner [[2]](https://arxiv.org/abs/2601.02996). Séparer la représentation linguistique du substrat de raisonnement révèle le même schéma : le moteur de raisonnement fonctionne mieux quand la couche linguistique qui lui est présentée est l'anglais [[3]](https://arxiv.org/abs/2505.15257). La conséquence n'est pas théorique. Sur onze langues et quatre domaines de tâches, les prompts non anglais produisent une dégradation constante des performances et de la robustesse [[4]](https://arxiv.org/abs/2505.15935).
 
@@ -99,7 +99,7 @@ Votre outil s'ouvre exactement comme d'habitude. Deux nouveaux raccourcis clavie
 | Raccourci | Action |
 |--------|--------|
 | `Ctrl+T` | Traduire la saisie actuelle en anglais |
-| `Ctrl+Y` | Annuler — restaurer le texte original |
+| `Ctrl+Y` | Annuler la traduction, restaurer le texte original |
 
 ## Configuration
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## Comment ça fonctionne
 
-Prompapa fork votre CLI cible dans un **PTY (pseudo-terminal)**, se positionnant de façon transparente entre votre clavier et le processus. Chaque frappe passe sans modification — jusqu'à ce que vous appuyiez sur `Ctrl+T`.
+Prompapa fork votre CLI cible dans un **PTY (pseudo-terminal)**, se positionnant de façon transparente entre votre clavier et le processus. Chaque frappe passe sans modification jusqu'à ce que vous appuyiez sur `Ctrl+T`.
 
 À ce moment :
 
@@ -169,3 +169,4 @@ Votre configuration dans `~/.config/prompapa/` est conservée. Supprimez-la manu
 ## TODO
 - [ ] Support `opencode`
 - [ ] Support de traduction via LLM API (OpenAI, Gemini, Claude, ...)
+- [ ] Langue cible (destination) configurable et élargie (actuellement anglais uniquement)

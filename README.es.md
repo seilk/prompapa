@@ -49,11 +49,11 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Escribe en <em>cualquier idioma</em> — Pulsa <code>Ctrl+T</code> para traducir al inglés. Pulsa <code>Ctrl+Y</code> para deshacer.</strong></em></p>
+<p align="center"><em><strong>Escribe en <em>cualquier idioma</em>. Pulsa <code>Ctrl+T</code> para traducir al inglés. Pulsa <code>Ctrl+Y</code> para deshacer.</strong></em></p>
 
 ## Por qué existe esto
 
-El lenguaje no es un contenedor neutral para el pensamiento. Las palabras a las que recurrimos primero, la estructura que imponemos antes de saber qué queremos decir, el instinto que precede a la articulación — todo esto es nativo. Forzar ese proceso a través de una segunda lengua no solo lo ralentiza. Lo remodela silenciosamente.
+El lenguaje no es un contenedor neutral para el pensamiento. Las palabras a las que recurrimos primero, la estructura que imponemos antes de saber qué queremos decir, el instinto que precede a la articulación. Todo esto es nativo. Forzar ese proceso a través de una segunda lengua no solo lo ralentiza. Lo remodela silenciosamente.
 
 Los asistentes de codificación de IA llevan una restricción análoga desde la dirección opuesta. La investigación confirma lo que muchos han intuido: estos modelos exhiben un sesgo estructural hacia el inglés, donde la misma intención expresada en un idioma no inglés produce respuestas mediblemente más débiles [[1]](https://arxiv.org/abs/2504.11833). El sesgo va más allá del vocabulario superficial. Los análisis representacionales de los grandes modelos de razonamiento muestran que sus rutas de razonamiento internas están centradas en el inglés por arquitectura, no solo por los datos de entrenamiento. Independientemente del idioma en que llegue un prompt, el modelo converge hacia un espacio latente con forma inglesa antes de comenzar a razonar [[2]](https://arxiv.org/abs/2601.02996). Separar la representación del lenguaje del sustrato de razonamiento revela el mismo patrón: el motor de razonamiento funciona mejor cuando la capa de lenguaje que se le presenta es el inglés [[3]](https://arxiv.org/abs/2505.15257). La consecuencia no es teórica. En once idiomas y cuatro dominios de tareas, los prompts no ingleses producen una degradación consistente tanto en rendimiento como en robustez [[4]](https://arxiv.org/abs/2505.15935).
 
@@ -99,7 +99,7 @@ Tu herramienta se abre exactamente igual que siempre. Dos nuevos atajos de tecla
 | Atajo | Acción |
 |--------|--------|
 | `Ctrl+T` | Traducir la entrada actual al inglés |
-| `Ctrl+Y` | Deshacer — restaurar el texto original |
+| `Ctrl+Y` | Deshacer la traducción, restaurar el texto original |
 
 ## Configuración
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## Cómo funciona
 
-Prompapa bifurca tu CLI objetivo en un **PTY (pseudo-terminal)**, situándose de forma transparente entre tu teclado y el proceso. Cada pulsación de tecla pasa sin cambios — hasta que pulsas `Ctrl+T`.
+Prompapa bifurca tu CLI objetivo en un **PTY (pseudo-terminal)**, situándose de forma transparente entre tu teclado y el proceso. Cada pulsación de tecla pasa sin cambios hasta que pulsas `Ctrl+T`.
 
 En ese momento:
 
@@ -169,3 +169,4 @@ Tu configuración en `~/.config/prompapa/` se conserva. Elimínala manualmente s
 ## TODO
 - [ ] Soporte de `opencode`
 - [ ] Soporte de traducción vía LLM API (OpenAI, Gemini, Claude, ...)
+- [ ] Idioma de destino configurable y ampliado (actualmente solo inglés)

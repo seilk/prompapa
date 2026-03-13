@@ -49,11 +49,11 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Tippe in <em>jeder Sprache</em> — Drücke <code>Ctrl+T</code> zum Übersetzen ins Englische. Drücke <code>Ctrl+Y</code> zum Rückgängigmachen.</strong></em></p>
+<p align="center"><em><strong>Tippe in <em>jeder Sprache</em>. Drücke <code>Ctrl+T</code> zum Übersetzen ins Englische. Drücke <code>Ctrl+Y</code> zum Rückgängigmachen.</strong></em></p>
 
 ## Warum das existiert
 
-Sprache ist kein neutrales Behältnis für Gedanken. Die Wörter, auf die wir als erstes zurückgreifen, die Struktur, die wir auferlegen, bevor wir überhaupt wissen, was wir meinen, der Instinkt, der der Artikulation vorausgeht — all das ist muttersprachlich. Diesen Prozess durch eine Zweitsprache zu zwingen, verlangsamt ihn nicht nur. Es formt ihn still um.
+Sprache ist kein neutrales Behältnis für Gedanken. Die Wörter, auf die wir als erstes zurückgreifen, die Struktur, die wir auferlegen, bevor wir überhaupt wissen, was wir meinen, der Instinkt, der der Artikulation vorausgeht. All das ist muttersprachlich. Diesen Prozess durch eine Zweitsprache zu zwingen, verlangsamt ihn nicht nur. Es formt ihn still um.
 
 KI-Coding-Assistenten tragen eine analoge Einschränkung aus der entgegengesetzten Richtung. Die Forschung bestätigt, was viele gespürt haben: Diese Modelle weisen einen strukturellen Englisch-Bias auf, bei dem die gleiche Absicht in einer nicht-englischen Sprache ausgedrückt messbar schwächere Antworten erzeugt [[1]](https://arxiv.org/abs/2504.11833). Der Bias reicht tiefer als das Oberflächenvokabular. Repräsentationale Analysen großer Reasoning-Modelle zeigen, dass ihre internen Reasoning-Pfade architektonisch englischzentriert sind, nicht nur durch Trainingsdaten. Unabhängig davon, in welcher Sprache ein Prompt ankommt, konvergiert das Modell zu einem englischförmigen latenten Raum, bevor es mit dem Schlussfolgern beginnt [[2]](https://arxiv.org/abs/2601.02996). Die Trennung von Sprachrepräsentation und Reasoning-Substrat zeigt dasselbe Muster: Das Reasoning-System funktioniert am besten, wenn die ihm präsentierte Sprachschicht Englisch ist [[3]](https://arxiv.org/abs/2505.15257). Die Konsequenz ist nicht theoretisch. Über elf Sprachen und vier Aufgabendomänen hinweg produzieren nicht-englische Prompts eine konsistente Verschlechterung sowohl der Leistung als auch der Robustheit [[4]](https://arxiv.org/abs/2505.15935).
 
@@ -99,7 +99,7 @@ Dein Tool öffnet sich genau wie gewohnt. Zwei neue Hotkeys:
 | Hotkey | Aktion |
 |--------|--------|
 | `Ctrl+T` | Aktuelle Eingabe ins Englische übersetzen |
-| `Ctrl+Y` | Rückgängig — Originaltext wiederherstellen |
+| `Ctrl+Y` | Übersetzung rückgängig machen, Originaltext wiederherstellen |
 
 ## Konfiguration
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## Wie es funktioniert
 
-Prompapa forkt dein Ziel-CLI in ein **PTY (Pseudo-Terminal)** und sitzt transparent zwischen deiner Tastatur und dem Prozess. Jeder Tastendruck wird unverändert weitergeleitet — bis du `Ctrl+T` drückst.
+Prompapa forkt dein Ziel-CLI in ein **PTY (Pseudo-Terminal)** und sitzt transparent zwischen deiner Tastatur und dem Prozess. Jeder Tastendruck wird unverändert weitergeleitet bis du `Ctrl+T` drückst.
 
 Zu diesem Zeitpunkt:
 
@@ -169,3 +169,4 @@ Deine Konfiguration unter `~/.config/prompapa/` bleibt erhalten. Lösche sie man
 ## TODO
 - [ ] `opencode`-Unterstützung
 - [ ] LLM API Übersetzungsunterstützung (OpenAI, Gemini, Claude, ...)
+- [ ] Konfigurierbare Zielsprache und Erweiterung (aktuell nur Englisch)

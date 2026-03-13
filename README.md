@@ -49,7 +49,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Type in <em>any language</em> — Press <code>Ctrl+T</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</strong></em></p>
+<p align="center"><em><strong>Type in <em>any language</em>. Press <code>Ctrl+T</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</strong></em></p>
 
 ## Why This Exists
 
@@ -99,7 +99,7 @@ Your tool opens exactly as normal. Two new hotkeys:
 | Hotkey | Action |
 |--------|--------|
 | `Ctrl+T` | Translate current input to English |
-| `Ctrl+Y` | Undo — restore original text |
+| `Ctrl+Y` | Undo translation, restore original text |
 
 ## Configuration
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## How it works
 
-Prompapa forks your target CLI into a **PTY (pseudo-terminal)**, sitting transparently between your keyboard and the process. Every keystroke passes through unchanged — until you hit `Ctrl+T`.
+Prompapa forks your target CLI into a **PTY (pseudo-terminal)**, sitting transparently between your keyboard and the process. Every keystroke passes through unchanged until you hit `Ctrl+T`.
 
 At that point:
 
@@ -169,3 +169,4 @@ Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 ## TODO
 - [ ] `opencode` support
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
+- [ ] Configurable target (destination) language — currently English only
