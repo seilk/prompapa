@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/prompapa-banner.png" alt="prompapa" width="600" />
+</p>
+
 # prompapa
 
 ## Install
