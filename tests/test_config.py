@@ -3,11 +3,15 @@ from pathlib import Path
 import pytest
 from tui_translator.config import load_config, ConfigError, AppConfig
 
+
 def _write_toml(content: str) -> Path:
-    f = tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False, encoding="utf-8")
+    f = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".toml", delete=False, encoding="utf-8"
+    )
     f.write(textwrap.dedent(content))
     f.close()
     return Path(f.name)
+
 
 def test_load_minimal_config():
     p = _write_toml("""
@@ -18,9 +22,22 @@ def test_load_minimal_config():
     cfg = load_config(p)
     assert cfg.provider == "openai"
     assert cfg.model == "gpt-4.1-mini"
+    assert cfg.api_key == ""
     assert cfg.hotkey_translate == "c-t"
     assert cfg.hotkey_undo == "c-z"
     assert cfg.preserve_backticks is True
+
+
+def test_load_config_with_direct_api_key():
+    p = _write_toml("""
+        provider = "google"
+        api_key = "google-direct-key"
+    """)
+    cfg = load_config(p)
+    assert cfg.provider == "google"
+    assert cfg.api_key == "google-direct-key"
+    assert cfg.api_key_env == ""
+
 
 def test_load_config_with_overrides():
     p = _write_toml("""
@@ -34,10 +51,12 @@ def test_load_config_with_overrides():
     assert cfg.hotkey_translate == "c-r"
     assert cfg.preserve_backticks is False
 
+
 def test_missing_required_field_raises():
     p = _write_toml('provider = "openai"')
-    with pytest.raises(ConfigError, match="api_key_env"):
+    with pytest.raises(ConfigError, match="api_key"):
         load_config(p)
+
 
 def test_missing_model_for_llm_raises():
     p = _write_toml("""
@@ -46,6 +65,7 @@ def test_missing_model_for_llm_raises():
     """)
     with pytest.raises(ConfigError, match="model"):
         load_config(p)
+
 
 def test_google_provider_no_model_required():
     p = _write_toml("""
@@ -56,9 +76,11 @@ def test_google_provider_no_model_required():
     assert cfg.provider == "google"
     assert cfg.model == ""
 
+
 def test_file_not_found_raises():
     with pytest.raises(ConfigError, match="not found"):
         load_config(Path("/nonexistent/config.toml"))
+
 
 def test_resolve_api_key(monkeypatch):
     monkeypatch.setenv("MY_TEST_KEY", "sk-test-123")
@@ -69,6 +91,18 @@ def test_resolve_api_key(monkeypatch):
     """)
     cfg = load_config(p)
     assert cfg.resolve_api_key() == "sk-test-123"
+
+
+def test_resolve_api_key_prefers_direct_value(monkeypatch):
+    monkeypatch.setenv("MY_TEST_KEY", "sk-env")
+    p = _write_toml("""
+        provider = "google"
+        api_key = "sk-direct"
+        api_key_env = "MY_TEST_KEY"
+    """)
+    cfg = load_config(p)
+    assert cfg.resolve_api_key() == "sk-direct"
+
 
 def test_missing_api_key_env_raises(monkeypatch):
     monkeypatch.delenv("MISSING_KEY_XYZ", raising=False)
@@ -81,6 +115,7 @@ def test_missing_api_key_env_raises(monkeypatch):
     with pytest.raises(ConfigError, match="MISSING_KEY_XYZ"):
         cfg.resolve_api_key()
 
+
 def test_target_cmd_default():
     p = _write_toml("""
         provider = "openai"
@@ -89,6 +124,7 @@ def test_target_cmd_default():
     """)
     cfg = load_config(p)
     assert cfg.target_cmd == ["claude"]
+
 
 def test_target_cmd_custom():
     p = _write_toml("""
@@ -99,6 +135,7 @@ def test_target_cmd_custom():
     """)
     cfg = load_config(p)
     assert cfg.target_cmd == ["opencode"]
+
 
 def test_target_cmd_with_args():
     p = _write_toml("""

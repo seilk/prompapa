@@ -18,13 +18,16 @@ def _load_dotenv(path: Path) -> None:
         if key:
             os.environ[key] = value
 
+
 class ConfigError(Exception):
     pass
+
 
 @dataclass
 class AppConfig:
     provider: str
-    api_key_env: str
+    api_key_env: str = ""
+    api_key: str = ""
     model: str = ""
     hotkey_translate: str = "c-t"
     hotkey_undo: str = "c-z"
@@ -32,14 +35,20 @@ class AppConfig:
     target_cmd: list[str] = field(default_factory=lambda: ["claude"])
 
     def resolve_api_key(self) -> str:
+        if self.api_key:
+            return self.api_key
         key = os.environ.get(self.api_key_env)
         if not key:
-            raise ConfigError(
-                f"Environment variable '{self.api_key_env}' is not set."
-            )
+            if self.api_key_env:
+                raise ConfigError(
+                    f"Environment variable '{self.api_key_env}' is not set."
+                )
+            raise ConfigError("Either 'api_key' or 'api_key_env' must be set.")
         return key
 
-_REQUIRED = ("provider", "api_key_env")
+
+_REQUIRED = ("provider",)
+
 
 def load_config(path: Path) -> AppConfig:
     if not path.exists():
@@ -49,19 +58,25 @@ def load_config(path: Path) -> AppConfig:
     for key in _REQUIRED:
         if key not in data:
             raise ConfigError(f"Missing required config field '{key}' in {path}")
+    if not data.get("api_key") and not data.get("api_key_env"):
+        raise ConfigError(
+            f"Missing required config field 'api_key' or 'api_key_env' in {path}"
+        )
     provider = data["provider"]
     # model is required for LLM providers, optional for google
     if provider != "google" and "model" not in data:
         raise ConfigError(f"Missing required config field 'model' in {path}")
     return AppConfig(
         provider=provider,
-        api_key_env=data["api_key_env"],
+        api_key_env=data.get("api_key_env", ""),
+        api_key=data.get("api_key", ""),
         model=data.get("model", ""),
         hotkey_translate=data.get("hotkey_translate", "c-t"),
         hotkey_undo=data.get("hotkey_undo", "c-z"),
         preserve_backticks=data.get("preserve_backticks", True),
         target_cmd=data.get("target_cmd", ["claude"]),
     )
+
 
 def default_config_path() -> Path:
     return Path.home() / ".config" / "tui-translator" / "config.toml"

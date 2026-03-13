@@ -27,6 +27,17 @@ Create `~/.config/tui-translator/config.toml`:
 ```toml
 provider = "openai"
 model = "gpt-4.1-mini"
+api_key = "sk-..."
+hotkey_translate = "c-t"
+hotkey_undo = "c-z"
+preserve_backticks = true
+```
+
+Or keep the secret in an environment variable:
+
+```toml
+provider = "openai"
+model = "gpt-4.1-mini"
 api_key_env = "OPENAI_API_KEY"
 hotkey_translate = "c-t"
 hotkey_undo = "c-z"
