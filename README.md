@@ -41,8 +41,6 @@ Your tool opens exactly as normal. Two new hotkeys:
 provider = "google"
 api_key = "your-gcp-translation-api-key"
 target_cmd = ["claude"]
-hotkey_translate = "c-t"
-hotkey_undo = "c-z"
 preserve_backticks = true
 ```
 

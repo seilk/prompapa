@@ -23,8 +23,6 @@ def test_load_minimal_config():
     assert cfg.provider == "openai"
     assert cfg.model == "gpt-4.1-mini"
     assert cfg.api_key == ""
-    assert cfg.hotkey_translate == "c-t"
-    assert cfg.hotkey_undo == "c-z"
     assert cfg.preserve_backticks is True
 
 
@@ -44,11 +42,9 @@ def test_load_config_with_overrides():
         provider = "anthropic"
         model = "claude-3-haiku-20240307"
         api_key_env = "ANTHROPIC_API_KEY"
-        hotkey_translate = "c-r"
         preserve_backticks = false
     """)
     cfg = load_config(p)
-    assert cfg.hotkey_translate == "c-r"
     assert cfg.preserve_backticks is False
 
 

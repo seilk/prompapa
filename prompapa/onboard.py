@@ -34,8 +34,6 @@ def run_onboard() -> None:
         provider = "google"
         api_key = "{api_key}"
         target_cmd = ["claude"]
-        hotkey_translate = "c-t"
-        hotkey_undo = "c-z"
         preserve_backticks = true
     """)
 

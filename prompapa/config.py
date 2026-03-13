@@ -29,8 +29,6 @@ class AppConfig:
     api_key_env: str = ""
     api_key: str = ""
     model: str = ""
-    hotkey_translate: str = "c-t"
-    hotkey_undo: str = "c-z"
     preserve_backticks: bool = True
     target_cmd: list[str] = field(default_factory=lambda: ["claude"])
 
@@ -71,8 +69,6 @@ def load_config(path: Path) -> AppConfig:
         api_key_env=data.get("api_key_env", ""),
         api_key=data.get("api_key", ""),
         model=data.get("model", ""),
-        hotkey_translate=data.get("hotkey_translate", "c-t"),
-        hotkey_undo=data.get("hotkey_undo", "c-z"),
         preserve_backticks=data.get("preserve_backticks", True),
         target_cmd=data.get("target_cmd", ["claude"]),
     )
