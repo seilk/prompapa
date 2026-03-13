@@ -4,14 +4,14 @@ from pathlib import Path
 import textwrap
 
 def run_onboard() -> None:
-    print("🐼 Welcome to prompapa onboarding!\n")
+    print("Welcome to prompapa onboarding!\n")
     print("Target CLI  : claude (opencode support coming soon!)")
     print("Translation : Claude (Anthropic)\n")
     
     api_key = getpass.getpass("Enter your Anthropic API Key (sk-ant-...): ").strip()
     
     if not api_key:
-        print("\n❌ API Key cannot be empty. Onboarding cancelled.")
+        print("\nAPI Key cannot be empty. Onboarding cancelled.")
         sys.exit(1)
         
     config_dir = Path.home() / ".config" / "prompapa"
@@ -29,5 +29,5 @@ def run_onboard() -> None:
     """)
     
     config_path.write_text(toml_content, encoding="utf-8")
-    print(f"\n✅ Configuration successfully saved to {config_path}")
-    print("🎉 You're all set! Run `papa claude` to begin.")
+    print(f"\nConfiguration successfully saved to {config_path}")
+    print("You're all set! Run `papa claude` to begin.")
