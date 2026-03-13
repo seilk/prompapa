@@ -169,7 +169,7 @@ async def _proxy_loop(
         captured = adapter.capture_text(screen)
         n = _display_width(captured) if captured else 0
         await adapter.clear_input(master_fd, n + 20)
-        adapter.inject_text(master_fd, pre_translation)
+        adapter.inject_text(master_fd, pre_translation.strip())
         pre_translation = None
 
     # ── Stdin handling (Ctrl+T = translate, Ctrl+Y = undo) ────────────────
