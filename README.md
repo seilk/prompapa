@@ -12,8 +12,30 @@
   <img src="https://img.shields.io/badge/translation-Google_Cloud-green" alt="Google Cloud Translation" />
 </p>
 
-## Demo Video
-To be announced
+## Demo
+
+<table>
+  <tr>
+    <td align="center"><b>Korean</b></td>
+    <td align="center"><b>Japanese</b></td>
+    <td align="center"><b>Chinese</b></td>
+  </tr>
+  <tr>
+    <td><video src="assets/prompapa-demo-ko.mp4" width="260" controls></video></td>
+    <td><video src="assets/prompapa-demo-jp.mp4" width="260" controls></video></td>
+    <td><video src="assets/prompapa-demo-cn.mp4" width="260" controls></video></td>
+  </tr>
+  <tr>
+    <td align="center"><b>French</b></td>
+    <td align="center"><b>Spanish</b></td>
+    <td align="center"><b>German</b></td>
+  </tr>
+  <tr>
+    <td><video src="assets/prompapa-demo-fr.mp4" width="260" controls></video></td>
+    <td><video src="assets/prompapa-demo-es.mp4" width="260" controls></video></td>
+    <td><video src="assets/prompapa-demo-de.mp4" width="260" controls></video></td>
+  </tr>
+</table>
 
 ## Why This Exists
 
