@@ -6,8 +6,8 @@ import os
 from prompapa.screen import ScreenTracker
 
 
-class OpenCodeAdapter:
-    prompt_prefixes = ("> ", "  > ")
+class CodexAdapter:
+    prompt_prefixes = ("› ", "›")
 
     async def clear_input(self, master_fd: int, captured: str) -> None:
         line_count = captured.count("\n") + 1

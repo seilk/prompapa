@@ -28,14 +28,18 @@ class ScreenTracker:
     def display(self) -> list[str]:
         return self._screen.display
 
-    def capture_near_cursor(self, max_lines: int = 20) -> str:
+    def capture_near_cursor(
+        self,
+        max_lines: int = 20,
+        prompt_prefixes: tuple[str, ...] = ("❯ ", "❯"),
+    ) -> str:
         cy = self._screen.cursor.y
         total = len(self._screen.display)
 
         for y in range(cy, max(cy - max_lines, -1), -1):
             row = self._screen.display[y].rstrip()
             cleaned = self._strip_decorations(row)
-            stripped = self._strip_prompt(cleaned)
+            stripped = self._strip_prompt(cleaned, prompt_prefixes)
             if stripped != cleaned:
                 lines: list[str] = [stripped]
                 for y2 in range(y + 1, min(y + max_lines, total)):
@@ -66,8 +70,8 @@ class ScreenTracker:
         return result.strip()
 
     @staticmethod
-    def _strip_prompt(line: str) -> str:
-        for prefix in ("❯ ", "❯"):
+    def _strip_prompt(line: str, prompt_prefixes: tuple[str, ...] = ("❯ ", "❯")) -> str:
+        for prefix in prompt_prefixes:
             if line.startswith(prefix):
                 return line[len(prefix) :]
         return line

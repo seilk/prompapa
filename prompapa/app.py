@@ -140,10 +140,7 @@ async def _proxy_loop(
                 _bell()
                 return
 
-            await adapter.clear_input(
-                master_fd,
-                _display_width(captured) + 20,
-            )
+            await adapter.clear_input(master_fd, captured)
 
             try:
                 result = await _translate_text(captured, config)
@@ -170,8 +167,7 @@ async def _proxy_loop(
         if pre_translation is None:
             return
         captured = adapter.capture_text(screen)
-        n = _display_width(captured) if captured else 0
-        await adapter.clear_input(master_fd, n + 20)
+        await adapter.clear_input(master_fd, captured)
         adapter.inject_text(master_fd, pre_translation.strip())
         pre_translation = None
 
