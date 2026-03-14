@@ -196,6 +196,6 @@ papa uninstall
 Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
-- [ x ] `codex` and `opencode` support
+- [x] `codex` and `opencode` support
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
