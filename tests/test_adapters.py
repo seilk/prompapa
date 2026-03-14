@@ -378,3 +378,43 @@ class TestOpenCodeJunkFiltering:
         captured = adapter.capture_text(screen)
         assert "first line" in captured
         assert "second line" in captured
+
+
+class TestPanelIsolation:
+    def test_sidebar_excluded_from_capture(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=120, rows=24)
+        main = " > 번역할 텍스트" + " " * 40
+        sidebar = " ~/projects/foo  "
+        row = "┃" + main + "┃" + sidebar + "┃"
+        screen.feed((row + "\r\n").encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "번역할 텍스트" in captured
+        assert "projects" not in captured
+
+    def test_strip_decorations_returns_widest_panel(self):
+        from prompapa.screen import ScreenTracker
+
+        main_panel = " > text" + " " * 50
+        sidebar = " path "
+        line = "┃" + main_panel + "┃" + sidebar + "┃"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "> text"
+        assert "path" not in result
+
+    def test_no_vertical_separators_unchanged(self):
+        from prompapa.screen import ScreenTracker
+
+        result = ScreenTracker._strip_decorations("─── hello world ───")
+        assert result == "hello world"
+
+    def test_empty_main_panel_returns_empty(self):
+        from prompapa.screen import ScreenTracker
+
+        main = " " * 40
+        sidebar = " ~/path/to/project "
+        line = "┃" + main + "┃" + sidebar + "┃"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == ""
