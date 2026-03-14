@@ -2,28 +2,49 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 
 from prompapa.screen import ScreenTracker
 
+_TERMINAL_JUNK = re.compile(r"\]4;\d|\]52;|tmux;|mux;|\d;\?\]")
+_COLUMN_GAP = re.compile(r"\s{10,}")
+
 
 class OpenCodeAdapter:
-    async def clear_input(self, master_fd: int, n: int) -> None:
-        # TODO: test whether OpenTUI needs individual right-arrow delays
-        # or if bulk cursor movement works natively
-        for _ in range(n):
-            os.write(master_fd, b"\x1b[C")
-            await asyncio.sleep(0.002)
-        os.write(master_fd, b"\x7f" * n)
-        await asyncio.sleep(0.05)
+    prompt_prefixes = ("> ", "  > ")
+
+    async def clear_input(self, master_fd: int, captured: str) -> None:
+        line_count = captured.count("\n") + 1
+        for i in range(line_count):
+            os.write(master_fd, b"\x01")  # Ctrl+A
+            await asyncio.sleep(0.02)
+            os.write(master_fd, b"\x0b")  # Ctrl+K
+            await asyncio.sleep(0.02)
+            if i < line_count - 1:
+                os.write(master_fd, b"\x7f")  # Backspace: delete newline
+                await asyncio.sleep(0.02)
+
+    @staticmethod
+    def _truncate_at_gap(line: str) -> str:
+        m = _COLUMN_GAP.search(line)
+        if m:
+            return line[: m.start()].rstrip()
+        return line
 
     def capture_text(self, screen: ScreenTracker) -> str:
-        # TODO: OpenCode has no ❯ prompt — need custom capture logic
-        # that identifies the textarea region from the screen layout
-        return screen.capture_near_cursor()
+        raw = screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
+        lines = []
+        for line in raw.split("\n"):
+            if not line.strip():
+                continue
+            if _TERMINAL_JUNK.search(line):
+                continue
+            line = self._truncate_at_gap(line)
+            if line:
+                lines.append(line)
+        return "\n".join(lines)
 
     def inject_text(self, master_fd: int, text: str) -> None:
-        # Bracketed paste works for text < 150 chars / < 3 lines.
-        # Longer pastes get summarized by OpenCode's onPaste handler.
         os.write(
             master_fd,
             b"\x1b[200~" + text.encode("utf-8") + b"\x1b[201~",

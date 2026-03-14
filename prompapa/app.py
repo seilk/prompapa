@@ -5,8 +5,8 @@ Wraps a target CLI app (e.g. `claude`, `opencode`) in a PTY, forwarding all
 input/output transparently.
 
 Hotkeys:
-  Ctrl+T  —  Translate entire input text.
-  Ctrl+Y  —  Undo last translation.
+  Ctrl+]  --  Translate entire input text.
+  Ctrl+Q  --  Undo last translation.
 
 Screen-capture-first translation flow (zero UI refresh):
   Capture:   pyte ScreenTracker reads the current input cell from the screen.
@@ -83,6 +83,7 @@ async def _proxy_loop(
     loop = asyncio.get_running_loop()
     translating = False
     pre_translation: str | None = None
+    post_translation: str | None = None
     cols, rows = shutil.get_terminal_size()
     screen = ScreenTracker(cols, rows)
 
@@ -99,15 +100,15 @@ async def _proxy_loop(
     # ── Forward helper ────────────────────────────────────────────────────
 
     def _forward_to_child(data: bytes) -> bool:
-        nonlocal pre_translation
+        nonlocal pre_translation, post_translation
         try:
             os.write(master_fd, data)
         except OSError:
             loop.stop()
             return False
-        # Enter clears the undo snapshot
         if b"\r" in data:
             pre_translation = None
+            post_translation = None
         return True
 
     # ── Translate ─────────────────────────────────────────────────────────
@@ -118,32 +119,35 @@ async def _proxy_loop(
         except OSError:
             pass
 
-    async def _poll_capture(max_ms: int = 300) -> str:
-        # Poll pyte screen every 20ms until non-empty or deadline.
-        # Ink batches renders, so yielding lets the event loop
-        # process queued handle_child_output callbacks first.
+    async def _poll_capture(max_ms: int = 300, stale_text: str | None = None) -> str:
         for _ in range(max_ms // 20):
             await asyncio.sleep(0.02)
             text = adapter.capture_text(screen)
-            if text.strip():
-                return text
+            if not text.strip():
+                continue
+            if stale_text is not None and text.strip() == stale_text.strip():
+                continue
+            return text
         return ""
 
-    async def do_translate() -> None:
-        nonlocal translating, pre_translation
+    def _nudge_child() -> None:
+        _set_winsize(master_fd)
+
+    async def do_translate(stale_text: str | None = None) -> None:
+        nonlocal translating, pre_translation, post_translation
         if translating:
             return
         translating = True
         try:
-            captured = await _poll_capture()
+            captured = await _poll_capture(stale_text=stale_text)
+            if not captured.strip():
+                _nudge_child()
+                captured = await _poll_capture(max_ms=500)
             if not captured.strip():
                 _bell()
                 return
 
-            await adapter.clear_input(
-                master_fd,
-                _display_width(captured) + 20,
-            )
+            await adapter.clear_input(master_fd, captured)
 
             try:
                 result = await _translate_text(captured, config)
@@ -156,8 +160,10 @@ async def _proxy_loop(
                 _bell()
                 return
 
+            result_text = result.strip()
             pre_translation = captured
-            adapter.inject_text(master_fd, result.strip())
+            post_translation = result_text
+            adapter.inject_text(master_fd, result_text)
         except OSError:
             pass
         finally:
@@ -166,16 +172,16 @@ async def _proxy_loop(
     # ── Undo ───────────────────────────────────────────────────────────────
 
     async def do_undo() -> None:
-        nonlocal pre_translation
+        nonlocal pre_translation, post_translation
         if pre_translation is None:
             return
-        captured = adapter.capture_text(screen)
-        n = _display_width(captured) if captured else 0
-        await adapter.clear_input(master_fd, n + 20)
+        text_to_clear = post_translation or adapter.capture_text(screen)
+        await adapter.clear_input(master_fd, text_to_clear)
         adapter.inject_text(master_fd, pre_translation.strip())
         pre_translation = None
+        post_translation = None
 
-    # ── Stdin handling (Ctrl+T = translate, Ctrl+Y = undo) ────────────────
+    # ── Stdin handling (Ctrl+] = translate, Ctrl+Q = undo) ────────────────
 
     def handle_stdin() -> None:
         try:
@@ -188,14 +194,14 @@ async def _proxy_loop(
             loop.stop()
             return
 
-        ctrl_t = data.find(b"\x14")
-        ctrl_y = data.find(b"\x19")
+        ctrl_bracket = data.find(b"\x1d")
+        ctrl_q = data.find(b"\x11")
 
         candidates: list[tuple[int, str]] = []
-        if ctrl_t != -1:
-            candidates.append((ctrl_t, "translate"))
-        if ctrl_y != -1:
-            candidates.append((ctrl_y, "undo"))
+        if ctrl_bracket != -1:
+            candidates.append((ctrl_bracket, "translate"))
+        if ctrl_q != -1:
+            candidates.append((ctrl_q, "undo"))
 
         if not candidates:
             _forward_to_child(data)
@@ -204,13 +210,15 @@ async def _proxy_loop(
         candidates.sort()
         idx, action = candidates[0]
 
+        stale = adapter.capture_text(screen) if idx > 0 else None
+
         if idx > 0:
             if not _forward_to_child(data[:idx]):
                 return
 
         if not translating:
             if action == "translate":
-                asyncio.ensure_future(do_translate())
+                asyncio.ensure_future(do_translate(stale_text=stale))
             else:
                 asyncio.ensure_future(do_undo())
 

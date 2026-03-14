@@ -8,7 +8,7 @@ from prompapa.screen import ScreenTracker
 
 
 class TargetAdapter(Protocol):
-    async def clear_input(self, master_fd: int, n: int) -> None: ...
+    async def clear_input(self, master_fd: int, captured: str) -> None: ...
     def capture_text(self, screen: ScreenTracker) -> str: ...
     def inject_text(self, master_fd: int, text: str) -> None: ...
 
@@ -18,9 +18,11 @@ _ADAPTERS: dict[str, type[TargetAdapter]] = {}
 
 def _register() -> None:
     from prompapa.adapters.claude import ClaudeAdapter
+    from prompapa.adapters.codex import CodexAdapter
     from prompapa.adapters.opencode import OpenCodeAdapter
 
     _ADAPTERS["claude"] = ClaudeAdapter
+    _ADAPTERS["codex"] = CodexAdapter
     _ADAPTERS["opencode"] = OpenCodeAdapter
 
 
