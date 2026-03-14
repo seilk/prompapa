@@ -5,8 +5,8 @@ Wraps a target CLI app (e.g. `claude`, `opencode`) in a PTY, forwarding all
 input/output transparently.
 
 Hotkeys:
-  Ctrl+T  —  Translate entire input text.
-  Ctrl+Y  —  Undo last translation.
+  Ctrl+]  --  Translate entire input text.
+  Ctrl+Q  --  Undo last translation.
 
 Screen-capture-first translation flow (zero UI refresh):
   Capture:   pyte ScreenTracker reads the current input cell from the screen.
@@ -175,7 +175,7 @@ async def _proxy_loop(
         pre_translation = None
         post_translation = None
 
-    # ── Stdin handling (Ctrl+T = translate, Ctrl+Y = undo) ────────────────
+    # ── Stdin handling (Ctrl+] = translate, Ctrl+Q = undo) ────────────────
 
     def handle_stdin() -> None:
         try:
@@ -188,14 +188,14 @@ async def _proxy_loop(
             loop.stop()
             return
 
-        ctrl_t = data.find(b"\x14")
-        ctrl_y = data.find(b"\x19")
+        ctrl_bracket = data.find(b"\x1d")
+        ctrl_q = data.find(b"\x11")
 
         candidates: list[tuple[int, str]] = []
-        if ctrl_t != -1:
-            candidates.append((ctrl_t, "translate"))
-        if ctrl_y != -1:
-            candidates.append((ctrl_y, "undo"))
+        if ctrl_bracket != -1:
+            candidates.append((ctrl_bracket, "translate"))
+        if ctrl_q != -1:
+            candidates.append((ctrl_q, "undo"))
 
         if not candidates:
             _forward_to_child(data)
