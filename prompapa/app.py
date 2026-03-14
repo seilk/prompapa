@@ -46,8 +46,10 @@ from prompapa.config import (
     AppConfig,
     ConfigError,
     Hotkey,
+    SystemConfig,
     default_config_path,
     load_config,
+    load_system_config,
     _load_dotenv,
 )
 from prompapa.masking import mask_tokens, unmask_tokens
@@ -98,9 +100,11 @@ async def _proxy_loop(
     config: AppConfig,
     child_pid: int,
     adapter: TargetAdapter,
+    sys_config: SystemConfig | None = None,
 ) -> None:
     loop = asyncio.get_running_loop()
     translating = False
+    sc = sys_config or SystemConfig()
     undo_stack: list[tuple[str, str]] = []
     cols, rows = shutil.get_terminal_size()
     screen = ScreenTracker(cols, rows)
@@ -137,20 +141,22 @@ async def _proxy_loop(
         except OSError:
             pass
 
-    async def _probe_edge(key: bytes, max_repeats: int = 30, settle_ms: int = 40) -> tuple[int, int]:
+    async def _probe_edge(key: bytes) -> tuple[int, int]:
         """Send *key* repeatedly until the cursor stops moving.
 
         Returns the final cursor position.  For Ctrl+A this reaches the
         very start of the input area; for Ctrl+E the very end — even in
         multi-line inputs where a single press only moves within one line.
+
+        Tunable via ``system.toml``: ``probe_max_repeats``, ``probe_settle_ms``.
         """
         pos = screen.cursor
-        for _ in range(max_repeats):
+        for _ in range(sc.probe_max_repeats):
             try:
                 os.write(master_fd, key)
             except OSError:
                 break
-            await asyncio.sleep(settle_ms / 1000)
+            await asyncio.sleep(sc.probe_settle_ms / 1000)
             new = screen.cursor
             if new == pos:
                 break  # cursor stopped moving
@@ -396,8 +402,10 @@ def main() -> None:
     old_attrs = termios.tcgetattr(sys.stdin.fileno())
     tty.setraw(sys.stdin.fileno())
 
+    sys_config = load_system_config()
+
     try:
-        asyncio.run(_proxy_loop(master_fd, config, pid, adapter))
+        asyncio.run(_proxy_loop(master_fd, config, pid, adapter, sys_config))
     finally:
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_attrs)
         try:

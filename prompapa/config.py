@@ -238,3 +238,29 @@ def load_config(path: Path) -> AppConfig:
 
 def default_config_path() -> Path:
     return Path.home() / ".config" / "prompapa" / "config.toml"
+
+
+# ── System tuning (system.toml) ─────────────────────────────────────────────
+
+
+@dataclass
+class SystemConfig:
+    probe_max_repeats: int = 30
+    probe_settle_ms: int = 40
+
+
+def load_system_config(path: Path | None = None) -> SystemConfig:
+    """Load ``system.toml`` from ``~/.config/prompapa/``.
+
+    Missing file or missing keys silently fall back to defaults.
+    """
+    if path is None:
+        path = Path.home() / ".config" / "prompapa" / "system.toml"
+    if not path.exists():
+        return SystemConfig()
+    with open(path, "rb") as f:
+        data = tomllib.load(f)
+    return SystemConfig(
+        probe_max_repeats=data.get("probe_max_repeats", 30),
+        probe_settle_ms=data.get("probe_settle_ms", 40),
+    )
