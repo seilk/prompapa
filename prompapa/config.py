@@ -240,6 +240,10 @@ def default_config_path() -> Path:
     return Path.home() / ".config" / "prompapa" / "config.toml"
 
 
+def default_system_config_path() -> Path:
+    return Path.home() / ".config" / "prompapa" / "system.toml"
+
+
 # ── System tuning (system.toml) ─────────────────────────────────────────────
 
 
@@ -249,13 +253,34 @@ class SystemConfig:
     probe_settle_ms: int = 40
 
 
+_SYSTEM_TOML_TEMPLATE = """\
+# Prompapa system tuning — adjust if needed, defaults work for most setups.
+
+# Cursor probe: how many times to repeat Ctrl+A/Ctrl+E to find input edges.
+probe_max_repeats = 30
+
+# Milliseconds to wait after each probe keystroke for cursor to settle.
+probe_settle_ms = 40
+"""
+
+
+def ensure_system_config(path: Path | None = None) -> Path:
+    """Create ``system.toml`` with defaults if it does not exist."""
+    if path is None:
+        path = default_system_config_path()
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_SYSTEM_TOML_TEMPLATE, encoding="utf-8")
+    return path
+
+
 def load_system_config(path: Path | None = None) -> SystemConfig:
     """Load ``system.toml`` from ``~/.config/prompapa/``.
 
     Missing file or missing keys silently fall back to defaults.
     """
     if path is None:
-        path = Path.home() / ".config" / "prompapa" / "system.toml"
+        path = default_system_config_path()
     if not path.exists():
         return SystemConfig()
     with open(path, "rb") as f:

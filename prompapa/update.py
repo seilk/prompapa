@@ -62,6 +62,9 @@ def run_update() -> None:
     )
 
     if result.returncode == 0:
+        from prompapa.config import ensure_system_config
+
+        ensure_system_config()
         print(f"Updated to {latest}.")
     else:
         print(f"Update failed:\n{result.stderr.strip()}", file=sys.stderr)
