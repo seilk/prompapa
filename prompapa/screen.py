@@ -49,9 +49,17 @@ class ScreenTracker:
                 for y2 in range(y + 1, min(y + max_lines, total)):
                     row2 = self._screen.display[y2].rstrip()
                     cleaned2 = self._strip_decorations(row2)
-                    if not cleaned2:
+                    if not cleaned2 and row2:
+                        # Non-empty row that became empty after stripping
+                        # decorations = decoration boundary (e.g. ─── line).
                         break
+                    if not cleaned2:
+                        # Genuinely empty line — preserve as part of input.
+                        lines.append("")
+                        continue
                     lines.append(cleaned2)
+                while lines and not lines[-1]:
+                    lines.pop()
                 return "\n".join(lines)
 
         lines = []
@@ -61,11 +69,19 @@ class ScreenTracker:
             cleaned = self._strip_decorations(row)
             if not cleaned:
                 if found:
-                    break
+                    if row:
+                        # Decoration boundary — stop.
+                        break
+                    # Genuinely empty line — preserve.
+                    lines.append("")
                 continue
             found = True
             lines.append(cleaned)
         lines.reverse()
+        while lines and not lines[-1]:
+            lines.pop()
+        while lines and not lines[0]:
+            lines.pop(0)
         return "\n".join(lines)
 
     _PANEL_SEPARATORS = frozenset("\u2502\u2503\u2551\u2588")  # │ ┃ ║ █
