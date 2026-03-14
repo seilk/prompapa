@@ -46,8 +46,10 @@ from prompapa.config import (
     AppConfig,
     ConfigError,
     Hotkey,
+    SystemConfig,
     default_config_path,
     load_config,
+    load_system_config,
     _load_dotenv,
 )
 from prompapa.masking import mask_tokens, unmask_tokens
@@ -98,9 +100,11 @@ async def _proxy_loop(
     config: AppConfig,
     child_pid: int,
     adapter: TargetAdapter,
+    sys_config: SystemConfig | None = None,
 ) -> None:
     loop = asyncio.get_running_loop()
     translating = False
+    sc = sys_config or SystemConfig()
     undo_stack: list[tuple[str, str]] = []
     cols, rows = shutil.get_terminal_size()
     screen = ScreenTracker(cols, rows)
@@ -137,7 +141,57 @@ async def _proxy_loop(
         except OSError:
             pass
 
+    async def _probe_edge(key: bytes) -> tuple[int, int]:
+        """Send *key* repeatedly until the cursor stops moving.
+
+        Returns the final cursor position.  For Ctrl+A this reaches the
+        very start of the input area; for Ctrl+E the very end — even in
+        multi-line inputs where a single press only moves within one line.
+
+        Tunable via ``system.toml``: ``probe_max_repeats``, ``probe_settle_ms``.
+        """
+        pos = screen.cursor
+        for _ in range(sc.probe_max_repeats):
+            try:
+                os.write(master_fd, key)
+            except OSError:
+                break
+            await asyncio.sleep(sc.probe_settle_ms / 1000)
+            new = screen.cursor
+            if new == pos:
+                break  # cursor stopped moving
+            pos = new
+        return pos
+
+    async def _probe_capture() -> str:
+        """Capture text by probing input boundaries with Home/End keys.
+
+        Sends Ctrl+A repeatedly until the cursor stops → start of input.
+        Sends Ctrl+E repeatedly until the cursor stops → end of input.
+        Reads screen content between those two positions.
+        """
+        orig = screen.cursor
+
+        home_x, home_y = await _probe_edge(b"\x01")  # Ctrl+A → Home
+        end_x, end_y = await _probe_edge(b"\x05")    # Ctrl+E → End
+
+        # If cursor didn't move at all, probing failed.
+        if (home_x, home_y) == (end_x, end_y) == orig:
+            return ""
+
+        text = screen.capture_by_cursor_probe(
+            home_y, home_x, end_y, end_x,
+            prompt_prefixes=adapter.prompt_prefixes,
+        )
+        return text
+
     async def _poll_capture(max_ms: int = 300, stale_text: str | None = None) -> str:
+        # Try cursor probe first (most accurate).
+        probed = await _probe_capture()
+        if probed.strip():
+            return probed
+
+        # Fallback: screen-based capture via adapter.
         for _ in range(max_ms // 20):
             await asyncio.sleep(0.02)
             text = adapter.capture_text(screen)
@@ -193,7 +247,9 @@ async def _proxy_loop(
         if not undo_stack:
             return
         pre, post = undo_stack.pop()
-        text_to_clear = post or adapter.capture_text(screen)
+        # Probe the actual editable area for accurate clearing.
+        probed = await _probe_capture()
+        text_to_clear = probed or post or adapter.capture_text(screen)
         await adapter.clear_input(master_fd, text_to_clear)
         adapter.inject_text(master_fd, pre.strip())
 
@@ -346,8 +402,10 @@ def main() -> None:
     old_attrs = termios.tcgetattr(sys.stdin.fileno())
     tty.setraw(sys.stdin.fileno())
 
+    sys_config = load_system_config()
+
     try:
-        asyncio.run(_proxy_loop(master_fd, config, pid, adapter))
+        asyncio.run(_proxy_loop(master_fd, config, pid, adapter, sys_config))
     finally:
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_attrs)
         try:

@@ -208,11 +208,14 @@ def run_onboard() -> None:
             preserve_backticks = true
         """)
 
+    from prompapa.config import ensure_system_config
+
     config_dir = Path.home() / ".config" / "prompapa"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_path = config_dir / "config.toml"
 
     config_path.write_text(toml_content, encoding="utf-8")
+    ensure_system_config()
     print(f"\nConfiguration saved to {config_path}")
     print("Run `papa claude` to get started.")
     print()
