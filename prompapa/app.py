@@ -137,34 +137,37 @@ async def _proxy_loop(
         except OSError:
             pass
 
-    async def _probe_cursor(key: bytes, settle_ms: int = 50) -> tuple[int, int]:
-        """Send a key to the child and wait for the cursor to settle."""
-        before = screen.cursor
-        try:
-            os.write(master_fd, key)
-        except OSError:
-            return before
-        # Wait for child to process and send cursor update.
-        for _ in range(settle_ms // 10):
-            await asyncio.sleep(0.01)
-            pos = screen.cursor
-            if pos != before:
-                # Give one more tick for the position to stabilise.
-                await asyncio.sleep(0.01)
-                return screen.cursor
-        return screen.cursor
+    async def _probe_edge(key: bytes, max_repeats: int = 30, settle_ms: int = 40) -> tuple[int, int]:
+        """Send *key* repeatedly until the cursor stops moving.
+
+        Returns the final cursor position.  For Ctrl+A this reaches the
+        very start of the input area; for Ctrl+E the very end — even in
+        multi-line inputs where a single press only moves within one line.
+        """
+        pos = screen.cursor
+        for _ in range(max_repeats):
+            try:
+                os.write(master_fd, key)
+            except OSError:
+                break
+            await asyncio.sleep(settle_ms / 1000)
+            new = screen.cursor
+            if new == pos:
+                break  # cursor stopped moving
+            pos = new
+        return pos
 
     async def _probe_capture() -> str:
         """Capture text by probing input boundaries with Home/End keys.
 
-        Sends Home (Ctrl+A) → records start, then End (Ctrl+E) → records
-        end.  Reads screen content between those two positions.  The child
-        TUI app defines the editable region — we just ask it.
+        Sends Ctrl+A repeatedly until the cursor stops → start of input.
+        Sends Ctrl+E repeatedly until the cursor stops → end of input.
+        Reads screen content between those two positions.
         """
         orig = screen.cursor
 
-        home_x, home_y = await _probe_cursor(b"\x01")  # Ctrl+A → Home
-        end_x, end_y = await _probe_cursor(b"\x05")    # Ctrl+E → End
+        home_x, home_y = await _probe_edge(b"\x01")  # Ctrl+A → Home
+        end_x, end_y = await _probe_edge(b"\x05")    # Ctrl+E → End
 
         # If cursor didn't move at all, probing failed.
         if (home_x, home_y) == (end_x, end_y) == orig:
