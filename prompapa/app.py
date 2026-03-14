@@ -130,6 +130,9 @@ async def _proxy_loop(
             return text
         return ""
 
+    def _nudge_child() -> None:
+        _set_winsize(master_fd)
+
     async def do_translate(stale_text: str | None = None) -> None:
         nonlocal translating, pre_translation, post_translation
         if translating:
@@ -137,6 +140,9 @@ async def _proxy_loop(
         translating = True
         try:
             captured = await _poll_capture(stale_text=stale_text)
+            if not captured.strip():
+                _nudge_child()
+                captured = await _poll_capture(max_ms=500)
             if not captured.strip():
                 _bell()
                 return
