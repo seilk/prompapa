@@ -509,3 +509,43 @@ class TestOpenCodeRealScreen:
         assert "\ud55c\uad6d\uc5b4 \uc785\ub825 \ud14c\uc2a4\ud2b8" in captured
         assert "Session title" not in captured
         assert "Context" not in captured
+
+    def test_input_line_path_excluded_by_gap_truncation(self):
+        """On-session input lines have path info at far right without
+        any separator -- just a large whitespace gap."""
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=200, rows=10)
+        rows = [
+            "  \u2503" + " " * 190,
+            "  \u2503  \ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8"
+            + " " * 120
+            + "~/_projects/tui-translator/.",
+            "  \u2503" + " " * 190,
+        ]
+        screen.feed(("\r\n".join(rows) + "\r\n").encode("utf-8"))
+        screen.feed(b"\x1b[2;20H")
+        captured = adapter.capture_text(screen)
+        assert "\ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8" in captured
+        assert "tui-translator" not in captured
+
+
+class TestGapTruncation:
+    def test_truncates_at_large_gap(self):
+        result = OpenCodeAdapter._truncate_at_gap(
+            "user text" + " " * 30 + "~/path/to/project"
+        )
+        assert result == "user text"
+
+    def test_preserves_normal_spaces(self):
+        result = OpenCodeAdapter._truncate_at_gap("hello world foo bar")
+        assert result == "hello world foo bar"
+
+    def test_empty_after_truncation(self):
+        result = OpenCodeAdapter._truncate_at_gap(" " * 30 + "~/path")
+        assert result == ""
+
+    def test_no_gap_passthrough(self):
+        result = OpenCodeAdapter._truncate_at_gap("simple text")
+        assert result == "simple text"

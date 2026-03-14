@@ -7,6 +7,7 @@ import re
 from prompapa.screen import ScreenTracker
 
 _TERMINAL_JUNK = re.compile(r"\]4;\d|\]52;|tmux;|mux;|\d;\?\]")
+_COLUMN_GAP = re.compile(r"\s{10,}")
 
 
 class OpenCodeAdapter:
@@ -23,13 +24,24 @@ class OpenCodeAdapter:
                 os.write(master_fd, b"\x7f")  # Backspace: delete newline
                 await asyncio.sleep(0.02)
 
+    @staticmethod
+    def _truncate_at_gap(line: str) -> str:
+        m = _COLUMN_GAP.search(line)
+        if m:
+            return line[: m.start()].rstrip()
+        return line
+
     def capture_text(self, screen: ScreenTracker) -> str:
         raw = screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
-        lines = [
-            line
-            for line in raw.split("\n")
-            if line.strip() and not _TERMINAL_JUNK.search(line)
-        ]
+        lines = []
+        for line in raw.split("\n"):
+            if not line.strip():
+                continue
+            if _TERMINAL_JUNK.search(line):
+                continue
+            line = self._truncate_at_gap(line)
+            if line:
+                lines.append(line)
         return "\n".join(lines)
 
     def inject_text(self, master_fd: int, text: str) -> None:
