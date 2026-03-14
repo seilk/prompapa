@@ -238,7 +238,9 @@ async def _proxy_loop(
         if not undo_stack:
             return
         pre, post = undo_stack.pop()
-        text_to_clear = post or adapter.capture_text(screen)
+        # Probe the actual editable area for accurate clearing.
+        probed = await _probe_capture()
+        text_to_clear = probed or post or adapter.capture_text(screen)
         await adapter.clear_input(master_fd, text_to_clear)
         adapter.inject_text(master_fd, pre.strip())
 
