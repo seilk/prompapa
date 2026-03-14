@@ -68,23 +68,24 @@ class ScreenTracker:
         lines.reverse()
         return "\n".join(lines)
 
+    _PANEL_SEPARATORS = frozenset("\u2502\u2503\u2551\u2588")  # │ ┃ ║ █
+
     @staticmethod
     def _strip_decorations(line: str) -> str:
-        # Split at vertical box separators to isolate TUI panels,
-        # then return the panel with the widest column span (distance
-        # between separators).  This prevents sidebar content from
-        # contaminating capture even when the main panel row contains
-        # only decoration characters (empty content after stripping).
-        seps = [-1]
+        # Find vertical separator positions.  Need 2+ separators to
+        # define a panel boundary (single separator is just a border).
+        seps: list[int] = []
         for i, ch in enumerate(line):
-            if ch in ("\u2502", "\u2503", "\u2551"):  # │ ┃ ║
+            if ch in ScreenTracker._PANEL_SEPARATORS:
                 seps.append(i)
-        seps.append(len(line))
 
-        if len(seps) <= 2:
+        if len(seps) < 2:
             result = "".join(ch for ch in line if not _is_decoration(ch))
             return result.strip()
 
+        # Compare segments between consecutive separators by column span.
+        # Ignores content before first and after last separator (leading/
+        # trailing padding that would incorrectly win by span alone).
         best_span = -1
         best_text = ""
         for j in range(len(seps) - 1):

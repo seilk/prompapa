@@ -442,3 +442,70 @@ class TestPanelIsolation:
         result = ScreenTracker._strip_decorations(line)
         assert result == "short"
         assert "sidebar" not in result
+
+    def test_full_block_separator_isolates_sidebar(self):
+        """OpenCode uses \u2588 (Full Block) as sidebar separator."""
+        from prompapa.screen import ScreenTracker
+
+        main = "  \u2503  user typed text" + " " * 40
+        sidebar_text = "    Context"
+        line = main + "\u2588" + sidebar_text
+        result = ScreenTracker._strip_decorations(line)
+        assert "user typed text" in result
+        assert "Context" not in result
+
+    def test_single_separator_uses_simple_strip(self):
+        """A single vertical separator (just a border) should not
+        trigger panel isolation -- use simple strip instead."""
+        from prompapa.screen import ScreenTracker
+
+        line = " " * 80 + "\u2503  hello world" + " " * 30
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "hello world"
+
+
+class TestOpenCodeRealScreen:
+    """Tests using layouts captured from actual opencode 1.2.25."""
+
+    def test_first_screen_captures_input(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=160, rows=40)
+        rows = []
+        rows.append(" " * 80 + "\u2503" + " " * 74)
+        rows.append(
+            " " * 80 + "\u2503  " + "\ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8" + " " * 50
+        )
+        rows.append(" " * 80 + "\u2503" + " " * 74)
+        rows.append(
+            " " * 80 + "\u2503  Sisyphus (Ultraworker)  Claude Opus 4.6" + " " * 30
+        )
+        rows.append(" " * 80 + "\u2559" + "\u2580" * 74)
+        feed = "\r\n".join(rows) + "\r\n"
+        screen.feed(feed.encode("utf-8"))
+        # bubbletea positions cursor at the text input, not bottom of screen
+        screen.feed(b"\x1b[2;96H")
+        captured = adapter.capture_text(screen)
+        assert "\ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8" in captured
+        assert "Sisyphus" not in captured
+
+    def test_on_session_sidebar_excluded(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=200, rows=40)
+        rows = []
+        rows.append("  \u2503" + " " * 150 + "\u2588    Session title")
+        rows.append(
+            "  \u2503  \ud55c\uad6d\uc5b4 \uc785\ub825 \ud14c\uc2a4\ud2b8"
+            + " " * 130
+            + "\u2588"
+        )
+        rows.append("  \u2503" + " " * 150 + "\u2588    Context")
+        feed = "\r\n".join(rows) + "\r\n"
+        screen.feed(feed.encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "\ud55c\uad6d\uc5b4 \uc785\ub825 \ud14c\uc2a4\ud2b8" in captured
+        assert "Session title" not in captured
+        assert "Context" not in captured
