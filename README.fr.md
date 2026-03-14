@@ -196,6 +196,6 @@ papa uninstall
 Votre configuration dans `~/.config/prompapa/` est conservée. Supprimez-la manuellement si nécessaire.
 
 ## TODO
-- [ ] Support `opencode`
+- [x] Support `codex` et `opencode`
 - [ ] Support de traduction via LLM API (OpenAI, Gemini, Claude, ...)
 - [ ] Langue cible (destination) configurable et élargie (actuellement anglais uniquement)
