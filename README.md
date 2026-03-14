@@ -109,7 +109,7 @@ This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation
 
 ## Usage
 
-> ⚠️ **OpenCode users:** Currently, Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled. I'll fix it right away!
+> ⚠️ **OpenCode users:** Currently, Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled. We'll fix it right away!
 
 
 ```bash
