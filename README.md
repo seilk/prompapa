@@ -68,6 +68,8 @@ Prompapa sits between them. Nothing more.
 3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. [arXiv:2505.15257](https://arxiv.org/abs/arXiv:2505.15257)
 4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/arXiv:2505.15935)
 
+> ⚠️ **OpenCode users:** Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled (`opencode --no-sidebar` or toggle it off with `Ctrl+B`) before using `papa opencode`.
+
 ## Install
 
 Requires [uv](https://docs.astral.sh/uv/). If you don't have it:
@@ -114,6 +116,8 @@ papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
+
+> **Note:** When using `papa opencode`, disable the sidebar view first. Prompapa cannot correctly isolate the input area when the sidebar is open, which causes translation errors.
 
 Your tool opens exactly as normal. Two new hotkeys:
 
@@ -217,5 +221,6 @@ Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
 - [x] `codex` and `opencode` support
+- [ ] OpenCode sidebar view support — currently throws an error when sidebar is enabled
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
