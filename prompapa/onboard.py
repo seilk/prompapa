@@ -104,12 +104,12 @@ def _pick_provider() -> str:
             questionary.Choice(
                 "OpenAI                    (LLM quality) — To be added!",
                 value="openai",
-                disabled="To be added!",
+                disabled=True,
             ),
             questionary.Choice(
                 "Anthropic                 (LLM quality) — To be added!",
                 value="anthropic",
-                disabled="To be added!",
+                disabled=True,
             ),
         ],
         style=_SELECT_STYLE,
