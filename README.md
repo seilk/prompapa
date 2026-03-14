@@ -244,6 +244,7 @@ Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
 - [x] `codex` and `opencode` support
-- [ ] OpenCode sidebar view support — currently throws an error when sidebar is enabled
+- [x] OpenCode sidebar view support
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
+- [ ] Tone revise mode support
