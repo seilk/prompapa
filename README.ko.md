@@ -72,8 +72,6 @@ Prompapa는 그 사이에 있습니다. 그것뿐입니다.
 
 ## 설치
 
-> ⚠️ **OpenCode 사용자 분들께:** 현재 Prompapa는 OpenCode의 사이드바 뷰를 지원하지 않습니다. OpenCode를 실행할 때 사이드바를 비활성화한 상태로 사용해 주세요. 이 문제는 최대한 빨리 수정하겠습니다!
-
 [uv](https://docs.astral.sh/uv/)가 필요합니다. 없다면 먼저 설치하세요:
 
 ```bash
@@ -113,15 +111,15 @@ papa onboard
 
 ## 사용법
 
+> ⚠️ **OpenCode 사용자 분들께:** `papa opencode`를 사용할 때는 먼저 사이드바 뷰를 비활성화해 주세요. 사이드바가 열려 있으면 Prompapa가 입력 영역을 올바르게 격리하지 못해 번역 오류가 발생합니다.
+
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **참고:** `papa opencode`를 사용할 때는 먼저 사이드바 뷰를 비활성화해 주세요. 사이드바가 열려 있으면 Prompapa가 입력 영역을 올바르게 격리하지 못해 번역 오류가 발생할 수 있습니다.
-
-도구가 평소와 똑같이 실행됩니다. 새로운 단축키 두 가지:
+> **참고:** 도구가 평소와 똑같이 실행됩니다. 새로운 단축키 두 가지:
 
 | 단축키 | 동작 |
 |--------|--------|

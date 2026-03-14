@@ -72,8 +72,6 @@ Prompapa se tient entre eux. Rien de plus.
 
 ## Installation
 
-> ⚠️ **Utilisateurs d'OpenCode :** Actuellement, Prompapa ne supporte pas la vue latérale (sidebar) d'OpenCode. Lancez OpenCode avec la barre latérale désactivée. Nous réglerons cela très vite !
-
 Nécessite [uv](https://docs.astral.sh/uv/). Si vous ne l'avez pas encore :
 
 ```bash
@@ -113,15 +111,15 @@ Cela configure `~/.config/prompapa/config.toml` avec votre clé API Google Cloud
 
 ## Utilisation
 
+> ⚠️ **Utilisateurs d'OpenCode :** Lorsque vous utilisez `papa opencode`, désactivez d'abord la vue latérale (sidebar). Prompapa ne peut pas isoler correctement la zone de saisie lorsque la barre latérale est ouverte, ce qui provoque des erreurs de traduction.
+
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **Note :** Lorsque vous utilisez `papa opencode`, désactivez d'abord la vue latérale (sidebar). Prompapa ne peut pas isoler correctement la zone de saisie lorsque la barre latérale est ouverte, ce qui provoque des erreurs de traduction.
-
-Votre outil s'ouvre exactement comme d'habitude. Deux nouveaux raccourcis clavier :
+> **Note :** Votre outil s'ouvre exactement comme d'habitude. Deux nouveaux raccourcis clavier :
 
 | Raccourci | Action |
 |--------|--------|

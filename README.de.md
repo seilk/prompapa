@@ -72,8 +72,6 @@ Prompapa steht zwischen ihnen. Nichts mehr.
 
 ## Installation
 
-> ⚠️ **OpenCode-Nutzer:** Derzeit unterstützt Prompapa die Seitenleistenansicht von OpenCode nicht. Führen Sie OpenCode mit deaktivierter Seitenleiste aus. Wir werden das so schnell wie möglich beheben!
-
 Benötigt [uv](https://docs.astral.sh/uv/). Falls noch nicht installiert:
 
 ```bash
@@ -113,15 +111,15 @@ Dies richtet `~/.config/prompapa/config.toml` mit deinem Google Cloud Translatio
 
 ## Verwendung
 
+> ⚠️ **OpenCode-Nutzer:** Wenn Sie `papa opencode` verwenden, deaktivieren Sie zuerst die Seitenleistenansicht. Prompapa kann den Eingabebereich nicht korrekt isolieren, wenn die Seitenleiste geöffnet ist, was zu Übersetzungsfehlern führt.
+
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **Hinweis:** Wenn Sie `papa opencode` verwenden, deaktivieren Sie zuerst die Seitenleistenansicht. Prompapa kann den Eingabebereich nicht korrekt isolieren, wenn die Seitenleiste geöffnet ist, was zu Übersetzungsfehlern führt.
-
-Dein Tool öffnet sich genau wie gewohnt. Zwei neue Hotkeys:
+> **Hinweis:** Dein Tool öffnet sich genau wie gewohnt. Zwei neue Hotkeys:
 
 | Hotkey | Aktion |
 |--------|--------|

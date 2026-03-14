@@ -72,8 +72,6 @@ Prompapa 站在它们之间。仅此而已。
 
 ## 安装
 
-> ⚠️ **OpenCode 用户请注意：** 目前，Prompapa 不支持 OpenCode 的侧边栏视图。请在禁用侧边栏的情况下运行 OpenCode。我们将尽快修复此问题！
-
 需要 [uv](https://docs.astral.sh/uv/)。如果尚未安装：
 
 ```bash
@@ -113,15 +111,15 @@ papa onboard
 
 ## 使用方法
 
+> ⚠️ **OpenCode 用户请注意：** 使用 `papa opencode` 时，请先禁用侧边栏视图。当侧边栏打开时，Prompapa 无法正确隔离输入区域，这会导致翻译错误。
+
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **注意：** 使用 `papa opencode` 时，请先禁用侧边栏视图。当侧边栏打开时，Prompapa 无法正确隔离输入区域，这会导致翻译错误。
-
-工具完全按照正常方式启动。新增两个快捷键：
+> **注意：** 工具完全按照正常方式启动。新增两个快捷键：
 
 | 快捷键 | 操作 |
 |--------|--------|

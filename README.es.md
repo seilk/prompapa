@@ -72,8 +72,6 @@ Prompapa se sitúa entre ellas. Nada más.
 
 ## Instalación
 
-> ⚠️ **Usuarios de OpenCode:** Actualmente, Prompapa no es compatible con la vista de barra lateral de OpenCode. Ejecute OpenCode con la barra lateral desactivada. ¡Lo solucionaremos de inmediato!
-
 Requiere [uv](https://docs.astral.sh/uv/). Si aún no lo tienes:
 
 ```bash
@@ -113,15 +111,15 @@ Esto configura `~/.config/prompapa/config.toml` con tu clave de API de Google Cl
 
 ## Uso
 
+> ⚠️ **Usuarios de OpenCode:** Al usar `papa opencode`, desactive primero la vista de barra lateral. Prompapa no puede aislar correctamente el área de entrada cuando la barra lateral está abierta, lo que provoca errores de traducción.
+
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **Nota:** Al usar `papa opencode`, desactive primero la vista de barra lateral. Prompapa no puede aislar correctamente el área de entrada cuando la barra lateral está abierta, lo que provoca errores de traducción.
-
-Tu herramienta se abre exactamente igual que siempre. Dos nuevos atajos de teclado:
+> **Nota:** Tu herramienta se abre exactamente igual que siempre. Dos nuevos atajos de teclado:
 
 | Atajo | Acción |
 |--------|--------|
