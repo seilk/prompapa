@@ -70,7 +70,17 @@ Prompapa se tient entre eux. Rien de plus.
 
 ## Installation
 
-Nécessite [uv](https://docs.astral.sh/uv/). Installez-le une fois, puis :
+Nécessite [uv](https://docs.astral.sh/uv/). Si vous ne l'avez pas encore :
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Puis installez prompapa :
 
 ```bash
 uv tool install git+https://github.com/seilk/prompapa
@@ -86,7 +96,16 @@ papa onboard
 
 Cela configure `~/.config/prompapa/config.toml` avec votre clé API Google Cloud Translation.
 
-Vous n'avez pas encore de clé ? L'assistant vous guide dans l'obtention d'une.
+### Obtenir une clé API Google Cloud Translation
+
+> **Niveau gratuit :** Google Cloud Translation API (Basic) offre **500 000 caractères gratuits par mois**. Au-delà, c'est 20 $ par million de caractères. Un prompt IA typique fait 100 à 300 caractères, soit environ 1 500 à 5 000 traductions par jour dans la limite gratuite.
+
+1. Rendez-vous sur [console.cloud.google.com](https://console.cloud.google.com) et connectez-vous.
+2. Créez un nouveau projet ou sélectionnez-en un existant.
+3. Allez dans **APIs & Services → Bibliothèque**, recherchez **Cloud Translation API** et cliquez sur **Activer**.
+4. Il vous sera demandé d'activer la facturation. Une carte bancaire est requise, mais **vous ne serez pas facturé dans la limite gratuite**. ([Détails tarifaires](https://cloud.google.com/translate/pricing))
+5. Allez dans **APIs & Services → Identifiants → Créer des identifiants → Clé API**.
+6. Copiez la clé générée et collez-la lorsque `papa onboard` vous la demande.
 
 ## Utilisation
 

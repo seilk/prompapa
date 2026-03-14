@@ -70,7 +70,17 @@ Prompapa 站在它们之间。仅此而已。
 
 ## 安装
 
-需要 [uv](https://docs.astral.sh/uv/)。安装一次后：
+需要 [uv](https://docs.astral.sh/uv/)。如果尚未安装：
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+然后安装 prompapa：
 
 ```bash
 uv tool install git+https://github.com/seilk/prompapa
@@ -86,7 +96,16 @@ papa onboard
 
 这会将你的 Google Cloud Translation API 密钥保存到 `~/.config/prompapa/config.toml`。
 
-还没有密钥？向导会引导你完成获取流程。
+### 获取 Google Cloud Translation API 密钥
+
+> **免费额度：** Google Cloud Translation API（Basic）每月提供 **500,000 字符免费额度**。超出后每 100 万字符收费 $20。AI 提示通常为 100～300 字符，免费额度内每天可翻译约 1,500～5,000 次。
+
+1. 访问 [console.cloud.google.com](https://console.cloud.google.com) 并登录。
+2. 创建新项目或选择现有项目。
+3. 前往 **APIs & Services → 库**，搜索 **Cloud Translation API**，点击**启用**。
+4. 系统会提示开启结算。需要绑定信用卡，但**在免费额度内不会产生实际费用**。（[价格详情](https://cloud.google.com/translate/pricing)）
+5. 前往 **APIs & Services → 凭据 → 创建凭据 → API 密钥**。
+6. 复制生成的密钥，在 `papa onboard` 运行时粘贴即可。
 
 ## 使用方法
 

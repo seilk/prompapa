@@ -70,7 +70,17 @@ Prompapa steht zwischen ihnen. Nichts mehr.
 
 ## Installation
 
-Benötigt [uv](https://docs.astral.sh/uv/). Einmal installieren, dann:
+Benötigt [uv](https://docs.astral.sh/uv/). Falls noch nicht installiert:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Dann prompapa installieren:
 
 ```bash
 uv tool install git+https://github.com/seilk/prompapa
@@ -86,7 +96,16 @@ papa onboard
 
 Dies richtet `~/.config/prompapa/config.toml` mit deinem Google Cloud Translation API-Schlüssel ein.
 
-Noch keinen Schlüssel? Der Assistent führt dich durch den Erhalt eines solchen.
+### Google Cloud Translation API-Schlüssel erhalten
+
+> **Kostenloses Kontingent:** Google Cloud Translation API (Basic) bietet **500.000 Zeichen pro Monat kostenlos**. Darüber hinaus kostet es $20 pro Million Zeichen. Ein typischer KI-Prompt hat 100–300 Zeichen, das heißt im kostenlosen Kontingent sind täglich rund 1.500–5.000 Übersetzungen möglich.
+
+1. Gehe zu [console.cloud.google.com](https://console.cloud.google.com) und melde dich an.
+2. Erstelle ein neues Projekt oder wähle ein vorhandenes aus.
+3. Navigiere zu **APIs und Dienste → Bibliothek**, suche nach **Cloud Translation API** und klicke auf **Aktivieren**.
+4. Du wirst aufgefordert, die Abrechnung zu aktivieren. Eine Kreditkarte ist erforderlich, aber **innerhalb des kostenlosen Kontingents entstehen keine Kosten**. ([Preisdetails](https://cloud.google.com/translate/pricing))
+5. Gehe zu **APIs und Dienste → Anmeldedaten → Anmeldedaten erstellen → API-Schlüssel**.
+6. Kopiere den generierten Schlüssel und füge ihn ein, wenn `papa onboard` danach fragt.
 
 ## Verwendung
 

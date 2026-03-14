@@ -70,7 +70,17 @@ Prompapa стоит между ними. Не более того.
 
 ## Установка
 
-Требуется [uv](https://docs.astral.sh/uv/). Установите один раз, затем:
+Требуется [uv](https://docs.astral.sh/uv/). Если не установлен:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Затем установите prompapa:
 
 ```bash
 uv tool install git+https://github.com/seilk/prompapa
@@ -86,7 +96,16 @@ papa onboard
 
 Это настроит `~/.config/prompapa/config.toml` с вашим ключом Google Cloud Translation API.
 
-Ещё нет ключа? Мастер проведёт вас через его получение.
+### Получение ключа Google Cloud Translation API
+
+> **Бесплатный уровень:** Google Cloud Translation API (Basic) предоставляет **500 000 символов бесплатно каждый месяц**. Сверх этого — $20 за миллион символов. Типичный AI-промпт занимает 100–300 символов, то есть в рамках бесплатного лимита доступно около 1 500–5 000 переводов в день.
+
+1. Перейдите на [console.cloud.google.com](https://console.cloud.google.com) и войдите в аккаунт.
+2. Создайте новый проект или выберите существующий.
+3. Перейдите в **APIs & Services → Библиотека**, найдите **Cloud Translation API** и нажмите **Включить**.
+4. Система предложит активировать платёжный аккаунт. Потребуется карта, но **в рамках бесплатного лимита оплата не взимается**. ([Подробнее о ценах](https://cloud.google.com/translate/pricing))
+5. Перейдите в **APIs & Services → Учётные данные → Создать учётные данные → Ключ API**.
+6. Скопируйте сгенерированный ключ и вставьте его при запросе `papa onboard`.
 
 ## Использование
 

@@ -70,7 +70,17 @@ Prompapa는 그 사이에 있습니다. 그것뿐입니다.
 
 ## 설치
 
-[uv](https://docs.astral.sh/uv/)가 필요합니다. 한 번 설치한 후:
+[uv](https://docs.astral.sh/uv/)가 필요합니다. 없다면 먼저 설치하세요:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+그 다음 prompapa를 설치합니다:
 
 ```bash
 uv tool install git+https://github.com/seilk/prompapa
@@ -86,7 +96,16 @@ papa onboard
 
 `~/.config/prompapa/config.toml`에 Google Cloud Translation API 키가 저장됩니다.
 
-키가 없으신가요? 마법사가 발급 방법을 안내합니다.
+### Google Cloud Translation API 키 발급
+
+> **무료 한도:** Google Cloud Translation API(Basic)는 **매월 500,000자를 무료**로 제공합니다. 초과 시 100만 자당 $20입니다. 일반적인 AI 프롬프트가 100~300자 수준이므로, 무료 한도 안에서 하루 1,500~5,000건의 번역이 가능합니다.
+
+1. [console.cloud.google.com](https://console.cloud.google.com)에 접속해 로그인합니다.
+2. 새 프로젝트를 생성하거나 기존 프로젝트를 선택합니다.
+3. **APIs & Services → Library**로 이동해 **Cloud Translation API**를 검색한 후 **사용 설정(Enable)**을 클릭합니다.
+4. 결제 수단 등록을 요청합니다. 신용카드 정보가 필요하지만, **무료 한도 내에서는 실제 청구가 발생하지 않습니다.** ([요금 안내](https://cloud.google.com/translate/pricing))
+5. **APIs & Services → 사용자 인증 정보(Credentials) → 사용자 인증 정보 만들기 → API 키**를 선택합니다.
+6. 생성된 키를 복사해 `papa onboard` 실행 시 입력하면 됩니다.
 
 ## 사용법
 
