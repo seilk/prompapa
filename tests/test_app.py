@@ -4,8 +4,14 @@ The proxy loop itself requires a real PTY and is tested manually.
 """
 
 import pytest
+import sys
 from unittest.mock import AsyncMock, patch
-from prompapa.app import _display_width, _translate_text
+from prompapa.app import (
+    _display_width,
+    _translate_text,
+    _is_translate_arg,
+    _run_translate_once,
+)
 from prompapa.config import AppConfig
 from prompapa.translator import TranslationError
 
@@ -198,3 +204,55 @@ class TestHotkeyByteParsing:
         data_without_prefix = b"\x1d"
         assert data_with_prefix.find(b"\x1d") > 0
         assert data_without_prefix.find(b"\x1d") == 0
+
+
+# ── One-shot translate mode ───────────────────────────────────────────────────
+
+
+class TestIsTranslateArg:
+    def test_known_subcommands_are_not_translate(self):
+        assert _is_translate_arg("onboard") is False
+        assert _is_translate_arg("uninstall") is False
+        assert _is_translate_arg("update") is False
+
+    def test_text_with_spaces_is_translate(self):
+        assert _is_translate_arg("이 버그를 고쳐줘") is True
+        assert _is_translate_arg("fix the bug please") is True
+
+    def test_text_with_tab_or_newline_is_translate(self):
+        assert _is_translate_arg("line1\nline2") is True
+        assert _is_translate_arg("col1\tcol2") is True
+
+    def test_nonexistent_command_single_token_is_translate(self):
+        assert _is_translate_arg("안녕하세요") is True
+        assert _is_translate_arg("__nonexistent_cmd_xyz__") is True
+
+    def test_real_command_is_not_translate(self):
+        assert (
+            _is_translate_arg("python") is False
+            or _is_translate_arg("python3") is False
+        )
+
+    def test_empty_string_is_translate(self):
+        assert _is_translate_arg("") is True
+
+
+async def test_run_translate_once_prints_result(monkeypatch, capsys):
+    cfg = _cfg(monkeypatch)
+    with patch(
+        "prompapa.app.rewrite_to_english",
+        new=AsyncMock(return_value="Fix this bug."),
+    ):
+        await _run_translate_once("이 버그 고쳐줘", cfg)
+    captured = capsys.readouterr()
+    assert captured.out.strip() == "Fix this bug."
+
+
+async def test_run_translate_once_propagates_error(monkeypatch):
+    cfg = _cfg(monkeypatch)
+    with patch(
+        "prompapa.app.rewrite_to_english",
+        new=AsyncMock(side_effect=TranslationError("API error")),
+    ):
+        with pytest.raises(TranslationError):
+            await _run_translate_once("이 버그 고쳐줘", cfg)

@@ -252,6 +252,25 @@ async def _proxy_loop(
         loop.remove_reader(sys.stdin.fileno())
 
 
+# ── One-shot translate ─────────────────────────────────────────────────────────
+
+_SUBCOMMANDS = {"onboard", "uninstall", "update"}
+
+
+def _is_translate_arg(arg: str) -> bool:
+    """True if *arg* is text to translate, not a subcommand or resolvable CLI target."""
+    if arg in _SUBCOMMANDS:
+        return False
+    if " " in arg or "\t" in arg or "\n" in arg:
+        return True
+    return shutil.which(arg) is None
+
+
+async def _run_translate_once(text: str, config: AppConfig) -> None:
+    result = await _translate_text(text, config)
+    print(result)
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 
@@ -280,6 +299,14 @@ def main() -> None:
             file=sys.stderr,
         )
         sys.exit(1)
+
+    if len(sys.argv) == 2 and _is_translate_arg(sys.argv[1]):
+        try:
+            asyncio.run(_run_translate_once(sys.argv[1], config))
+        except TranslationError as e:
+            print(f"prompapa: translation failed: {e}", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(0)
 
     if not sys.stdin.isatty():
         print(
