@@ -83,21 +83,26 @@ def _test_anthropic(api_key: str, model: str) -> str:
     return response.json()["content"][0]["text"].strip()
 
 
+_GRAY = "\x1b[90m"
+_RESET = "\x1b[0m"
+
+
 def _pick_provider() -> str:
     print("Select translation provider:")
     print("  1) Google Cloud Translation  (fast, free tier 500k chars/month)")
-    print("  2) OpenAI                    (LLM quality, requires paid account)")
-    print("  3) Anthropic                 (LLM quality, requires paid account)")
+    print(f"  {_GRAY}2) OpenAI                    (LLM quality) — To be added!{_RESET}")
+    print(f"  {_GRAY}3) Anthropic                 (LLM quality) — To be added!{_RESET}")
     print()
     while True:
-        choice = input("Provider [1/2/3]: ").strip()
+        choice = input("Provider [1]: ").strip() or "1"
         if choice == "1":
             return "google"
-        if choice == "2":
-            return "openai"
-        if choice == "3":
-            return "anthropic"
-        print("  Please enter 1, 2, or 3.")
+        if choice in ("2", "3"):
+            print(
+                f"  {_GRAY}LLM providers are not yet available. Please select 1.{_RESET}"
+            )
+            continue
+        print("  Please enter 1.")
 
 
 def _pick_model(provider: str) -> str:
