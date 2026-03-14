@@ -31,7 +31,40 @@ class OpenCodeAdapter:
             return line[: m.start()].rstrip()
         return line
 
+    # OpenCode uses ┃ (U+2503) at a fixed column for the input area.
+    _INPUT_MARKER = "\u2503"
+
+    # Lines in the ┃ column that are NOT user input.
+    _NON_INPUT = re.compile(
+        r"(Sisyphus|Ultraworker|GPT-|Claude|Gemini|gpt-|claude-|o[1-9]|"
+        r"OpenAI|Anthropic|Google|Ask anything|Fix broken|ctrl\+[a-z]|"
+        r"tab agents|variants)\s",
+        re.IGNORECASE,
+    )
+
     def capture_text(self, screen: ScreenTracker) -> str:
+        raw = screen.capture_by_marker(
+            self._INPUT_MARKER, prompt_prefixes=self.prompt_prefixes,
+        )
+        if raw:
+            # Filter out model info lines and terminal junk.
+            lines = []
+            for line in raw.split("\n"):
+                if self._NON_INPUT.search(line):
+                    continue
+                if _TERMINAL_JUNK.search(line):
+                    continue
+                line = self._truncate_at_gap(line)
+                lines.append(line)
+            # Trim trailing/leading blanks.
+            while lines and not lines[-1]:
+                lines.pop()
+            while lines and not lines[0]:
+                lines.pop(0)
+            result = "\n".join(lines)
+            if result.strip():
+                return result
+        # Fallback to prompt-based capture.
         raw = screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
         lines = []
         for line in raw.split("\n"):
