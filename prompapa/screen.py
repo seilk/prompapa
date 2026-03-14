@@ -185,6 +185,52 @@ class ScreenTracker:
             lines.pop(0)
         return "\n".join(lines)
 
+    def capture_by_cursor_probe(
+        self,
+        home_y: int,
+        home_x: int,
+        end_y: int,
+        end_x: int,
+        prompt_prefixes: tuple[str, ...] = (),
+    ) -> str:
+        """Capture text between probed Home and End cursor positions.
+
+        The caller sends Home/End keys to the child PTY and observes
+        where the cursor lands.  Those positions define the exact
+        editable region as reported by the TUI app itself.
+        """
+        display = self._screen.display
+
+        lines: list[str] = []
+        for y in range(home_y, min(end_y + 1, len(display))):
+            row = display[y]
+            if y == home_y and y == end_y:
+                text = row[home_x : end_x]
+            elif y == home_y:
+                text = row[home_x :]
+            elif y == end_y:
+                text = row[: end_x]
+            else:
+                text = row
+            # Strip decorations but preserve panel isolation.
+            text = self._strip_decorations(text.rstrip())
+            lines.append(text)
+
+        # Strip prompt prefix from first non-empty line.
+        for i, line in enumerate(lines):
+            for prefix in prompt_prefixes:
+                if line.startswith(prefix):
+                    lines[i] = line[len(prefix) :]
+                    break
+            if lines[i] != line:
+                break
+
+        while lines and not lines[-1]:
+            lines.pop()
+        while lines and not lines[0]:
+            lines.pop(0)
+        return "\n".join(lines)
+
     @staticmethod
     def _strip_prompt(line: str, prompt_prefixes: tuple[str, ...] = ("❯ ", "❯")) -> str:
         for prefix in prompt_prefixes:
