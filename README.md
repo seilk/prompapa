@@ -68,8 +68,6 @@ Prompapa sits between them. Nothing more.
 3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. [arXiv:2505.15257](https://arxiv.org/abs/arXiv:2505.15257)
 4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/arXiv:2505.15935)
 
-> ⚠️ **OpenCode users:** Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled (`opencode --no-sidebar` or toggle it off with `Ctrl+B`) before using `papa opencode`.
-
 ## Install
 
 Requires [uv](https://docs.astral.sh/uv/). If you don't have it:
@@ -110,6 +108,9 @@ This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation
 6. Copy the generated key and paste it when `papa onboard` asks for it.
 
 ## Usage
+
+> ⚠️ **OpenCode users:** Currently, Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled. I'll fix it right away!
+
 
 ```bash
 papa claude # for Claude-Code
