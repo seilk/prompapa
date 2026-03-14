@@ -47,7 +47,7 @@ from prompapa.config import (
 from prompapa.masking import mask_tokens, unmask_tokens
 from prompapa.translator import TranslationError, rewrite_to_english
 
-_UNDO_STACK_MAX = 10
+_UNDO_STACK_MAX = 1
 
 
 def _display_width(text: str) -> int:

@@ -236,7 +236,7 @@ def test_undo_stack_max_is_positive_int():
 
 
 def test_undo_stack_max_value():
-    assert _UNDO_STACK_MAX == 10
+    assert _UNDO_STACK_MAX == 1
 
 
 def test_undo_stack_bounded():
