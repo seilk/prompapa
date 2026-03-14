@@ -71,22 +71,32 @@ class ScreenTracker:
     @staticmethod
     def _strip_decorations(line: str) -> str:
         # Split at vertical box separators to isolate TUI panels,
-        # then return the widest panel (main content area).
-        # Prevents sidebar content from contaminating capture.
-        panels: list[str] = [""]
-        for ch in line:
-            if ch in ("│", "┃", "║"):
-                panels.append("")
-            elif _is_decoration(ch):
-                continue
-            else:
-                panels[-1] += ch
+        # then return the panel with the widest column span (distance
+        # between separators).  This prevents sidebar content from
+        # contaminating capture even when the main panel row contains
+        # only decoration characters (empty content after stripping).
+        seps = [-1]
+        for i, ch in enumerate(line):
+            if ch in ("\u2502", "\u2503", "\u2551"):  # │ ┃ ║
+                seps.append(i)
+        seps.append(len(line))
 
-        if len(panels) <= 1:
-            return panels[0].strip()
+        if len(seps) <= 2:
+            result = "".join(ch for ch in line if not _is_decoration(ch))
+            return result.strip()
 
-        widest = max(panels, key=len)
-        return widest.strip()
+        best_span = -1
+        best_text = ""
+        for j in range(len(seps) - 1):
+            start = seps[j] + 1
+            end = seps[j + 1]
+            span = end - start
+            if span > best_span:
+                segment = line[start:end]
+                text = "".join(ch for ch in segment if not _is_decoration(ch))
+                best_span = span
+                best_text = text
+        return best_text.strip()
 
     @staticmethod
     def _strip_prompt(line: str, prompt_prefixes: tuple[str, ...] = ("❯ ", "❯")) -> str:

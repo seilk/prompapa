@@ -83,6 +83,7 @@ async def _proxy_loop(
     loop = asyncio.get_running_loop()
     translating = False
     pre_translation: str | None = None
+    post_translation: str | None = None
     cols, rows = shutil.get_terminal_size()
     screen = ScreenTracker(cols, rows)
 
@@ -99,15 +100,15 @@ async def _proxy_loop(
     # ── Forward helper ────────────────────────────────────────────────────
 
     def _forward_to_child(data: bytes) -> bool:
-        nonlocal pre_translation
+        nonlocal pre_translation, post_translation
         try:
             os.write(master_fd, data)
         except OSError:
             loop.stop()
             return False
-        # Enter clears the undo snapshot
         if b"\r" in data:
             pre_translation = None
+            post_translation = None
         return True
 
     # ── Translate ─────────────────────────────────────────────────────────
@@ -130,7 +131,7 @@ async def _proxy_loop(
         return ""
 
     async def do_translate() -> None:
-        nonlocal translating, pre_translation
+        nonlocal translating, pre_translation, post_translation
         if translating:
             return
         translating = True
@@ -153,8 +154,10 @@ async def _proxy_loop(
                 _bell()
                 return
 
+            result_text = result.strip()
             pre_translation = captured
-            adapter.inject_text(master_fd, result.strip())
+            post_translation = result_text
+            adapter.inject_text(master_fd, result_text)
         except OSError:
             pass
         finally:
@@ -163,13 +166,14 @@ async def _proxy_loop(
     # ── Undo ───────────────────────────────────────────────────────────────
 
     async def do_undo() -> None:
-        nonlocal pre_translation
+        nonlocal pre_translation, post_translation
         if pre_translation is None:
             return
-        captured = adapter.capture_text(screen)
-        await adapter.clear_input(master_fd, captured)
+        text_to_clear = post_translation or adapter.capture_text(screen)
+        await adapter.clear_input(master_fd, text_to_clear)
         adapter.inject_text(master_fd, pre_translation.strip())
         pre_translation = None
+        post_translation = None
 
     # ── Stdin handling (Ctrl+T = translate, Ctrl+Y = undo) ────────────────
 

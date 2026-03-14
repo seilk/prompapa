@@ -418,3 +418,27 @@ class TestPanelIsolation:
         line = "┃" + main + "┃" + sidebar + "┃"
         result = ScreenTracker._strip_decorations(line)
         assert result == ""
+
+    def test_decoration_only_main_panel_excludes_sidebar(self):
+        """When main panel has only decorations (e.g. horizontal rule),
+        column-span should still pick main panel, not sidebar."""
+        from prompapa.screen import ScreenTracker
+
+        main_deco = "\u2500" * 60
+        sidebar = " ~/projects/foo "
+        line = "\u2503" + main_deco + "\u2503" + sidebar + "\u2503"
+        result = ScreenTracker._strip_decorations(line)
+        assert "projects" not in result
+        assert result == ""
+
+    def test_column_span_picks_wider_panel(self):
+        """Even if sidebar has more text content, the wider column
+        span of the main panel wins."""
+        from prompapa.screen import ScreenTracker
+
+        main = " short " + " " * 53
+        sidebar = " this sidebar has much longer text content here "
+        line = "\u2502" + main + "\u2502" + sidebar + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "short"
+        assert "sidebar" not in result
