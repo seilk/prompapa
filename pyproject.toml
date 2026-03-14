@@ -1,7 +1,7 @@
 [project]
 name = "prompapa"
-version = "0.1.0"
-description = "Terminal TUI for Korean-to-English prompt rewriting"
+version = "1.0.0"
+description = "Translate your native language prompts to English inside Claude Code, Codex, and Opencode"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
