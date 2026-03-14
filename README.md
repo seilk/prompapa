@@ -248,3 +248,4 @@ Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
 - [ ] Tone revise mode support
+- [ ] Large paste capture — TUI shows "[Pasted Text...]" placeholder instead of full content, causing only the placeholder to be captured
