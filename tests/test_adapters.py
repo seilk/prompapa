@@ -204,7 +204,7 @@ class TestInjectText:
 
 class TestClearInput:
     @pytest.mark.asyncio
-    async def test_claude_clear_uses_right_arrow_and_backspace(self):
+    async def test_claude_clear_single_line(self):
         adapter = ClaudeAdapter()
         writes = []
         with patch.object(
@@ -213,14 +213,10 @@ class TestClearInput:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await adapter.clear_input(99, "hello")
 
-        # "hello" is 5 chars wide + 20 safety = 25
-        right_arrows = [w for w in writes if w == b"\x1b[C"]
-        assert len(right_arrows) == 25
-
-        # Should have one bulk backspace write
-        backspaces = [w for w in writes if b"\x7f" in w and w != b"\x1b[C"]
-        assert len(backspaces) == 1
-        assert backspaces[0] == b"\x7f" * 25
+        assert writes[0] == b"\x01"
+        assert writes[1] == b"\x0b"
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(backspaces) == 0
 
     @pytest.mark.asyncio
     async def test_claude_clear_handles_korean(self):
@@ -232,9 +228,10 @@ class TestClearInput:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await adapter.clear_input(99, "안녕")
 
-        # "안녕" is 4 chars wide + 20 = 24
+        assert writes[0] == b"\x01"
+        assert writes[1] == b"\x0b"
         right_arrows = [w for w in writes if w == b"\x1b[C"]
-        assert len(right_arrows) == 24
+        assert len(right_arrows) == 0
 
     @pytest.mark.asyncio
     async def test_codex_clear_single_line(self):
@@ -664,7 +661,7 @@ class TestMultilineClearEdgeCases:
         assert len(backspaces) == 3
 
     @pytest.mark.asyncio
-    async def test_claude_clear_multiline_uses_display_width(self):
+    async def test_claude_clear_multiline_uses_ctrl_a_k(self):
         adapter = ClaudeAdapter()
         writes = []
         with patch.object(
@@ -672,13 +669,12 @@ class TestMultilineClearEdgeCases:
         ):
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await adapter.clear_input(99, "line1\nline2")
-        # Claude uses right-arrow+backspace, NOT Ctrl+A/K.
-        # For multiline "line1\nline2" the display_width is 11 + 20 safety = 31.
-        right_arrows = [w for w in writes if w == b"\x1b[C"]
-        assert len(right_arrows) == 31
-        backspaces = [w for w in writes if b"\x7f" in w and w != b"\x1b[C"]
+        ctrl_a = [w for w in writes if w == b"\x01"]
+        ctrl_k = [w for w in writes if w == b"\x0b"]
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(ctrl_a) == 2
+        assert len(ctrl_k) == 2
         assert len(backspaces) == 1
-        assert backspaces[0] == b"\x7f" * 31
 
     @pytest.mark.asyncio
     async def test_codex_clear_single_char(self):

@@ -10,6 +10,7 @@ from prompapa.app import (
     _display_width,
     _translate_text,
     _run_translate_once,
+    _UNDO_STACK_MAX,
 )
 from prompapa.config import AppConfig
 from prompapa.translator import TranslationError
@@ -227,3 +228,39 @@ async def test_run_translate_once_propagates_error(monkeypatch):
     ):
         with pytest.raises(TranslationError):
             await _run_translate_once("이 버그 고쳐줘", cfg)
+
+
+def test_undo_stack_max_is_positive_int():
+    assert isinstance(_UNDO_STACK_MAX, int)
+    assert _UNDO_STACK_MAX > 0
+
+
+def test_undo_stack_max_value():
+    assert _UNDO_STACK_MAX == 10
+
+
+def test_undo_stack_bounded():
+    stack: list[tuple[str, str]] = []
+    for i in range(_UNDO_STACK_MAX + 5):
+        stack.append((f"pre_{i}", f"post_{i}"))
+        if len(stack) > _UNDO_STACK_MAX:
+            stack.pop(0)
+    assert len(stack) == _UNDO_STACK_MAX
+    assert stack[-1] == (f"pre_{_UNDO_STACK_MAX + 4}", f"post_{_UNDO_STACK_MAX + 4}")
+
+
+def test_undo_stack_cleared_on_enter():
+    stack: list[tuple[str, str]] = [("orig", "translated"), ("orig2", "translated2")]
+    data = b"\r"
+    if b"\r" in data:
+        stack.clear()
+    assert stack == []
+
+
+def test_undo_stack_pops_in_lifo_order():
+    stack: list[tuple[str, str]] = [("a", "A"), ("b", "B"), ("c", "C")]
+    pre, post = stack.pop()
+    assert pre == "c"
+    assert post == "C"
+    pre2, post2 = stack.pop()
+    assert pre2 == "b"

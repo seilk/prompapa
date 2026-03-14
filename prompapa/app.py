@@ -6,14 +6,15 @@ input/output transparently.
 
 Hotkeys:
   Ctrl+]  --  Translate entire input text.
-  Ctrl+Q  --  Undo last translation.
+  Ctrl+Q  --  Undo last translation (stack depth: _UNDO_STACK_MAX).
 
 Screen-capture-first translation flow (zero UI refresh):
   Capture:   pyte ScreenTracker reads the current input cell from the screen.
-  Clear:     Right-arrow × N (individual writes, cursor to end) + BS × N.
+  Clear:     Ctrl+A + Ctrl+K per line (adapter-specific).
   Translate: API call while TUI stays live.
   Inject:    Bracketed paste (\\x1b[200~ ... \\x1b[201~) into child PTY.
-  Undo:      Single `pre_translation` slot — cleared on Enter.
+  Undo:      Undo stack — cleared on Enter.
+  Errors:    Written as a temporary status line below the prompt.
 """
 
 from __future__ import annotations
@@ -46,7 +47,7 @@ from prompapa.config import (
 from prompapa.masking import mask_tokens, unmask_tokens
 from prompapa.translator import TranslationError, rewrite_to_english
 
-# ── Pure logic helpers (unit-testable) ────────────────────────────────────────
+_UNDO_STACK_MAX = 10
 
 
 def _display_width(text: str) -> int:
@@ -57,16 +58,9 @@ def _display_width(text: str) -> int:
 
 
 async def _translate_text(text: str, config: AppConfig) -> str:
-    """
-    Translate text via the configured API with backtick masking.
-    Returns translated text. Raises TranslationError on failure.
-    """
     ctx = mask_tokens(text, enabled=config.preserve_backticks)
     masked_result = await rewrite_to_english(ctx.masked, config)
     return unmask_tokens(masked_result, ctx.tokens)
-
-
-# ── PTY proxy loop ─────────────────────────────────────────────────────────────
 
 
 def _set_winsize(fd: int) -> None:
@@ -82,12 +76,9 @@ async def _proxy_loop(
 ) -> None:
     loop = asyncio.get_running_loop()
     translating = False
-    pre_translation: str | None = None
-    post_translation: str | None = None
+    undo_stack: list[tuple[str, str]] = []
     cols, rows = shutil.get_terminal_size()
     screen = ScreenTracker(cols, rows)
-
-    # ── Child output handling ──────────────────────────────────────────────
 
     def handle_child_output() -> None:
         try:
@@ -97,25 +88,27 @@ async def _proxy_loop(
         except OSError:
             loop.stop()
 
-    # ── Forward helper ────────────────────────────────────────────────────
-
     def _forward_to_child(data: bytes) -> bool:
-        nonlocal pre_translation, post_translation
+        nonlocal undo_stack
         try:
             os.write(master_fd, data)
         except OSError:
             loop.stop()
             return False
         if b"\r" in data:
-            pre_translation = None
-            post_translation = None
+            undo_stack.clear()
         return True
-
-    # ── Translate ─────────────────────────────────────────────────────────
 
     def _bell() -> None:
         try:
             os.write(sys.stdout.fileno(), b"\x07")
+        except OSError:
+            pass
+
+    def _show_error(msg: str) -> None:
+        try:
+            line = f"\r\n\x1b[31m[prompapa] {msg}\x1b[0m\r\n"
+            os.write(sys.stdout.fileno(), line.encode())
         except OSError:
             pass
 
@@ -134,7 +127,7 @@ async def _proxy_loop(
         _set_winsize(master_fd)
 
     async def do_translate(stale_text: str | None = None) -> None:
-        nonlocal translating, pre_translation, post_translation
+        nonlocal translating, undo_stack
         if translating:
             return
         translating = True
@@ -151,37 +144,33 @@ async def _proxy_loop(
 
             try:
                 result = await _translate_text(captured, config)
-            except TranslationError:
+            except TranslationError as exc:
                 adapter.inject_text(master_fd, captured)
-                _bell()
+                _show_error(str(exc))
                 return
-            except Exception:
+            except Exception as exc:
                 adapter.inject_text(master_fd, captured)
-                _bell()
+                _show_error(str(exc))
                 return
 
             result_text = result.strip()
-            pre_translation = captured
-            post_translation = result_text
+            undo_stack.append((captured, result_text))
+            if len(undo_stack) > _UNDO_STACK_MAX:
+                undo_stack.pop(0)
             adapter.inject_text(master_fd, result_text)
         except OSError:
             pass
         finally:
             translating = False
 
-    # ── Undo ───────────────────────────────────────────────────────────────
-
     async def do_undo() -> None:
-        nonlocal pre_translation, post_translation
-        if pre_translation is None:
+        nonlocal undo_stack
+        if not undo_stack:
             return
-        text_to_clear = post_translation or adapter.capture_text(screen)
+        pre, post = undo_stack.pop()
+        text_to_clear = post or adapter.capture_text(screen)
         await adapter.clear_input(master_fd, text_to_clear)
-        adapter.inject_text(master_fd, pre_translation.strip())
-        pre_translation = None
-        post_translation = None
-
-    # ── Stdin handling (Ctrl+] = translate, Ctrl+Q = undo) ────────────────
+        adapter.inject_text(master_fd, pre.strip())
 
     def handle_stdin() -> None:
         try:
@@ -226,8 +215,6 @@ async def _proxy_loop(
         if after:
             _forward_to_child(after)
 
-    # ── Wire up readers and run ────────────────────────────────────────────
-
     loop.add_reader(master_fd, handle_child_output)
     loop.add_reader(sys.stdin.fileno(), handle_stdin)
 
@@ -252,15 +239,9 @@ async def _proxy_loop(
         loop.remove_reader(sys.stdin.fileno())
 
 
-# ── One-shot translate ─────────────────────────────────────────────────────────
-
-
 async def _run_translate_once(text: str, config: AppConfig) -> None:
     result = await _translate_text(text, config)
     print(result)
-
-
-# ── Entry point ────────────────────────────────────────────────────────────────
 
 
 def main() -> None:
