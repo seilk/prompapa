@@ -111,6 +111,11 @@ def _pick_provider() -> str:
                 value="anthropic",
                 disabled=True,
             ),
+            questionary.Choice(
+                "Gemini                    (LLM quality) — To be added!",
+                value="gemini",
+                disabled=True,
+            ),
         ],
         style=_SELECT_STYLE,
     ).ask()
