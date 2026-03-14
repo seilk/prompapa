@@ -119,24 +119,24 @@ async def _proxy_loop(
         except OSError:
             pass
 
-    async def _poll_capture(max_ms: int = 300) -> str:
-        # Poll pyte screen every 20ms until non-empty or deadline.
-        # Ink batches renders, so yielding lets the event loop
-        # process queued handle_child_output callbacks first.
+    async def _poll_capture(max_ms: int = 300, stale_text: str | None = None) -> str:
         for _ in range(max_ms // 20):
             await asyncio.sleep(0.02)
             text = adapter.capture_text(screen)
-            if text.strip():
-                return text
+            if not text.strip():
+                continue
+            if stale_text is not None and text.strip() == stale_text.strip():
+                continue
+            return text
         return ""
 
-    async def do_translate() -> None:
+    async def do_translate(stale_text: str | None = None) -> None:
         nonlocal translating, pre_translation, post_translation
         if translating:
             return
         translating = True
         try:
-            captured = await _poll_capture()
+            captured = await _poll_capture(stale_text=stale_text)
             if not captured.strip():
                 _bell()
                 return
@@ -204,13 +204,15 @@ async def _proxy_loop(
         candidates.sort()
         idx, action = candidates[0]
 
+        stale = adapter.capture_text(screen) if idx > 0 else None
+
         if idx > 0:
             if not _forward_to_child(data[:idx]):
                 return
 
         if not translating:
             if action == "translate":
-                asyncio.ensure_future(do_translate())
+                asyncio.ensure_future(do_translate(stale_text=stale))
             else:
                 asyncio.ensure_future(do_undo())
 
