@@ -127,7 +127,12 @@ Your tool opens exactly as normal. Two new hotkeys:
 Translate text directly from the command line without launching a TUI:
 
 ```bash
-papa -t "번역할 텍스트를 여기에 입력하세요"
+papa -t "버그를 고쳐줘"          # Korean  → Fix the bug.
+papa -t "バグを修正して"          # Japanese → Fix the bug.
+papa -t "修复这个错误"            # Chinese  → Fix this error.
+papa -t "Corrige el error"       # Spanish  → Fix the error.
+papa -t "Corrige le bug"         # French   → Fix the bug.
+papa -t "Behebe den Fehler"      # German   → Fix the bug.
 ```
 
 The translated result is printed to stdout, making it easy to pipe into other tools:
