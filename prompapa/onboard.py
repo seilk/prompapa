@@ -84,6 +84,15 @@ def _test_anthropic(api_key: str, model: str) -> str:
     return response.json()["content"][0]["text"].strip()
 
 
+_SELECT_STYLE = questionary.Style(
+    [
+        ("pointer", "fg:#00d7ff bold"),
+        ("selected", "fg:#00d7ff bold"),
+        ("highlighted", "fg:#00d7ff bold"),
+    ]
+)
+
+
 def _pick_provider() -> str:
     choice = questionary.select(
         "Select translation provider:",
@@ -103,6 +112,7 @@ def _pick_provider() -> str:
                 disabled="To be added!",
             ),
         ],
+        style=_SELECT_STYLE,
     ).ask()
     if choice is None:
         sys.exit(0)
