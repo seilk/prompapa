@@ -111,8 +111,7 @@ This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation
 
 ## Usage
 
-> ⚠️ **OpenCode users:** Currently, Prompapa does not support OpenCode's sidebar view. Run OpenCode with the sidebar disabled. We'll fix it right away!
-
+> ⚠️ **OpenCode users:** When using `papa opencode`, disable the sidebar view first. Prompapa cannot correctly isolate the input area when the sidebar is open, which causes translation errors.
 
 ```bash
 papa claude # for Claude-Code
@@ -120,9 +119,7 @@ papa codex # for Codex
 papa opencode # for Opencode
 ```
 
-> **Note:** When using `papa opencode`, disable the sidebar view first. Prompapa cannot correctly isolate the input area when the sidebar is open, which causes translation errors.
-
-Your tool opens exactly as normal. Two new hotkeys:
+> **💡 Note:** Your Coding Assistants opens exactly as normal. Two new hotkeys:
 
 | Hotkey | Action |
 |--------|--------|
