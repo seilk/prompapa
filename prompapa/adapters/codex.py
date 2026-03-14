@@ -20,7 +20,16 @@ class CodexAdapter:
                 os.write(master_fd, b"\x7f")  # Backspace: delete preceding newline
                 await asyncio.sleep(0.02)
 
+    # Codex marks every input line with ▌ (U+258C, left half block).
+    _INPUT_MARKER = "\u258c"
+
     def capture_text(self, screen: ScreenTracker) -> str:
+        result = screen.capture_by_marker(
+            self._INPUT_MARKER, prompt_prefixes=self.prompt_prefixes,
+        )
+        if result:
+            return result
+        # Fallback to prompt-based capture.
         return screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
 
     def inject_text(self, master_fd: int, text: str) -> None:
