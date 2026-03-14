@@ -156,3 +156,61 @@ def test_clear_marks_fresh():
     b.clear()
     assert b.stale is False
     assert b.text() == ""
+
+
+# ── Stale detection on arrow keys ────────────────────────────────────────────
+
+
+def test_up_arrow_marks_stale():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    assert b.stale is False
+    b.feed(b"\x1b[A")  # Up arrow
+    assert b.stale is True
+
+
+def test_down_arrow_marks_stale():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.feed(b"\x1b[B")  # Down arrow
+    assert b.stale is True
+
+
+def test_left_right_arrow_marks_stale():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.feed(b"\x1b[C")  # Right
+    assert b.stale is True
+    b.mark_fresh()
+    b.feed(b"\x1b[D")  # Left
+    assert b.stale is True
+
+
+def test_typing_after_stale_stays_stale():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.feed(b"\x1b[A")  # Up arrow → stale
+    b.feed(b"x")  # Typing doesn't clear stale
+    assert b.stale is True
+
+
+def test_enter_after_stale_clears_stale():
+    b = ShadowBuffer()
+    b.feed(b"hello")
+    b.feed(b"\x1b[A")  # Up → stale
+    assert b.stale is True
+    b.feed(b"\x0d")  # Enter → fresh
+    assert b.stale is False
+
+
+def test_multiline_with_blanks_via_buffer():
+    b = ShadowBuffer()
+    b.feed("사과".encode("utf-8"))
+    b.feed(b"\x0a")  # newline
+    b.feed(b"\x0a")  # blank line
+    b.feed("바나나".encode("utf-8"))
+    b.feed(b"\x0a")
+    b.feed(b"\x0a")
+    b.feed("수박".encode("utf-8"))
+    assert b.text() == "사과\n\n바나나\n\n수박"
+    assert b.stale is False

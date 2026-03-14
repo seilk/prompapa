@@ -61,6 +61,12 @@ class ShadowBuffer:
                 # Skip final byte (0x40-0x7e)
                 if j < len(data) and 0x40 <= data[j] <= 0x7E:
                     j += 1
+                # Arrow keys (ESC[A/B/C/D) and other cursor movement
+                # indicate history recall or mid-text editing — buffer
+                # can no longer be trusted as the sole source of truth.
+                seq = data[i:j]
+                if len(seq) == 3 and seq[1:2] == b"[" and seq[2:3] in (b"A", b"B", b"C", b"D"):
+                    self._stale = True
                 i = j
                 continue
 
