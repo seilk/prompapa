@@ -122,6 +122,20 @@ Your tool opens exactly as normal. Two new hotkeys:
 | `Ctrl+]` | Translate current input to English |
 | `Ctrl+Q` | Undo translation, restore original text |
 
+### One-shot translation
+
+Translate text directly from the command line without launching a TUI:
+
+```bash
+papa -t "번역할 텍스트를 여기에 입력하세요"
+```
+
+The translated result is printed to stdout, making it easy to pipe into other tools:
+
+```bash
+papa -t "이 내용을 클립보드에 복사해줘" | pbcopy
+```
+
 ## Configuration
 
 `~/.config/prompapa/config.toml`:
@@ -177,6 +191,7 @@ Run locally without installing:
 
 ```bash
 uv run papa claude
+uv run papa -t "테스트 문장"
 ```
 
 ## Update
