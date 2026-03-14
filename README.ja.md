@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>母国語で入力して、<code>Ctrl+T</code>を押すだけ。<strong>Claude Code</strong>で完璧な英語に変わります。</em>
+  <em>母国語で入力して、<code>Ctrl+]</code>を押すだけ。<strong>Claude Code / Codex / Opencode</strong>で完璧な英語に変わります。</em>
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong><em>あらゆる言語</em>で入力できます。<code>Ctrl+T</code>で英語に翻訳、<code>Ctrl+Y</code>で元に戻す。</strong></em></p>
+<p align="center"><em><strong><em>あらゆる言語</em>で入力できます。<code>Ctrl+]</code>で英語に翻訳、<code>Ctrl+Q</code>で元に戻す。</strong></em></p>
 
 ## なぜ作ったのか
 
@@ -63,10 +63,10 @@ Prompapaはその間に立っています。それだけです。
 
 ### 参考文献
 
-1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* arXiv:2504.11833
-2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* arXiv:2601.02996
-3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. arXiv:2505.15257
-4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. arXiv:2505.15935
+1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
+2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* [arXiv:2601.02996](https://arxiv.org/abs/2601.02996)
+3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. [arXiv:2505.15257](https://arxiv.org/abs/2505.15257)
+4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## インストール
 
@@ -98,8 +98,8 @@ papa claude
 
 | ホットキー | 動作 |
 |--------|--------|
-| `Ctrl+T` | 現在の入力を英語に翻訳 |
-| `Ctrl+Y` | 翻訳を取り消し、原文を復元 |
+| `Ctrl+]` | 現在の入力を英語に翻訳 |
+| `Ctrl+Q` | 翻訳を取り消し、原文を復元 |
 
 ## 設定
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## 仕組み
 
-Prompapaは対象CLIを**PTY（疑似端末）**としてフォークし、キーボードとプロセスの間に透過的に位置します。すべてのキー入力は変更なく通過します。`Ctrl+T`を押すまでは。
+Prompapaは対象CLIを**PTY（疑似端末）**としてフォークし、キーボードとプロセスの間に透過的に位置します。すべてのキー入力は変更なく通過します。`Ctrl+]`を押すまでは。
 
 その時点で:
 
@@ -175,6 +175,6 @@ papa uninstall
 `~/.config/prompapa/`の設定ファイルは保持されます。必要であれば手動で削除してください。
 
 ## TODO
-- [ ] `opencode` サポート
+- [x] `codex` と `opencode` のサポート
 - [ ] LLM API 翻訳サポート (OpenAI, Gemini, Claude, ...)
 - [ ] 翻訳先言語の選択と多様化 (現在は英語固定)

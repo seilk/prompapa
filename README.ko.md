@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>모국어로 입력하세요. <code>Ctrl+T</code>를 누르면 <strong>Claude Code</strong>에서 완벽한 영어로 바뀝니다.</em>
+  <em>모국어로 입력하세요. <code>Ctrl+]</code>를 누르면 <strong>Claude Code / Codex / Opencode</strong>에서 완벽한 영어로 바뀝니다.</em>
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong><em>어떤 언어든</em> 입력하세요. <code>Ctrl+T</code>로 영어로 번역, <code>Ctrl+Y</code>로 되돌리기.</strong></em></p>
+<p align="center"><em><strong><em>어떤 언어든</em> 입력하세요. <code>Ctrl+]</code>로 영어로 번역, <code>Ctrl+Q</code>로 되돌리기.</strong></em></p>
 
 ## 왜 만들었는가
 
@@ -63,10 +63,10 @@ Prompapa는 그 사이에 있습니다. 그것뿐입니다.
 
 ### 참고문헌
 
-1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* arXiv:2504.11833
-2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* arXiv:2601.02996
-3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. arXiv:2505.15257
-4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. arXiv:2505.15935
+1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
+2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* [arXiv:2601.02996](https://arxiv.org/abs/2601.02996)
+3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. [arXiv:2505.15257](https://arxiv.org/abs/2505.15257)
+4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## 설치
 
@@ -98,8 +98,8 @@ papa claude
 
 | 단축키 | 동작 |
 |--------|--------|
-| `Ctrl+T` | 현재 입력을 영어로 번역 |
-| `Ctrl+Y` | 번역 취소, 원문 복원 |
+| `Ctrl+]` | 현재 입력을 영어로 번역 |
+| `Ctrl+Q` | 번역 취소, 원문 복원 |
 
 ## 설정 파일
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## 작동 원리
 
-Prompapa는 대상 CLI를 **PTY(가상 터미널)**로 포크하여, 키보드와 프로세스 사이에 투명하게 위치합니다. 모든 키 입력은 변경 없이 통과합니다. `Ctrl+T`를 누르기 전까지는.
+Prompapa는 대상 CLI를 **PTY(가상 터미널)**로 포크하여, 키보드와 프로세스 사이에 투명하게 위치합니다. 모든 키 입력은 변경 없이 통과합니다. `Ctrl+]`를 누르기 전까지는.
 
 그 시점에:
 
@@ -175,6 +175,6 @@ papa uninstall
 `~/.config/prompapa/`의 설정 파일은 보존됩니다. 필요하다면 직접 삭제하세요.
 
 ## TODO
-- [ ] `opencode` 지원
+- [x] `codex` 및 `opencode` 지원
 - [ ] LLM API 번역 지원 (OpenAI, Gemini, Claude, ...)
 - [ ] 번역 대상(목적지) 언어 선택 가능하게 다양화 (현재 영어 고정)

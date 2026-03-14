@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>Escribe en tu idioma. Pulsa <code>Ctrl+T</code> en <strong>Claude Code</strong>. Míralo convertirse en inglés perfecto.</em>
+  <em>Escribe en tu idioma. Pulsa <code>Ctrl+]</code> en <strong>Claude Code / Codex / Opencode</strong>. Míralo convertirse en inglés perfecto.</em>
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Escribe en <em>cualquier idioma</em>. Pulsa <code>Ctrl+T</code> para traducir al inglés. Pulsa <code>Ctrl+Y</code> para deshacer.</strong></em></p>
+<p align="center"><em><strong>Escribe en <em>cualquier idioma</em>. Pulsa <code>Ctrl+]</code> para traducir al inglés. Pulsa <code>Ctrl+Q</code> para deshacer.</strong></em></p>
 
 ## Por qué existe esto
 
@@ -63,10 +63,10 @@ Prompapa se sitúa entre ellas. Nada más.
 
 ### Referencias
 
-1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* arXiv:2504.11833
-2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* arXiv:2601.02996
-3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. arXiv:2505.15257
-4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. arXiv:2505.15935
+1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
+2. Liu et al. (2026). *Large Reasoning Models Are (Not Yet) Multilingual Latent Reasoners.* [arXiv:2601.02996](https://arxiv.org/abs/2601.02996)
+3. Zhao et al. (2025). *When Less Language is More: Language-Reasoning Disentanglement Makes LLMs Better Multilingual Reasoners.* NeurIPS 2025. [arXiv:2505.15257](https://arxiv.org/abs/2505.15257)
+4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## Instalación
 
@@ -98,8 +98,8 @@ Tu herramienta se abre exactamente igual que siempre. Dos nuevos atajos de tecla
 
 | Atajo | Acción |
 |--------|--------|
-| `Ctrl+T` | Traducir la entrada actual al inglés |
-| `Ctrl+Y` | Deshacer la traducción, restaurar el texto original |
+| `Ctrl+]` | Traducir la entrada actual al inglés |
+| `Ctrl+Q` | Deshacer la traducción, restaurar el texto original |
 
 ## Configuración
 
@@ -132,7 +132,7 @@ preserve_backticks = true
 
 ## Cómo funciona
 
-Prompapa bifurca tu CLI objetivo en un **PTY (pseudo-terminal)**, situándose de forma transparente entre tu teclado y el proceso. Cada pulsación de tecla pasa sin cambios hasta que pulsas `Ctrl+T`.
+Prompapa bifurca tu CLI objetivo en un **PTY (pseudo-terminal)**, situándose de forma transparente entre tu teclado y el proceso. Cada pulsación de tecla pasa sin cambios hasta que pulsas `Ctrl+]`.
 
 En ese momento:
 
