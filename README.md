@@ -49,7 +49,7 @@
   </tr>
 </table>
 
-<p align="center"><em><strong>Type in <em>any language</em>. Press <code>Ctrl+]</code> to translate to English. Press <code>Ctrl+Q</code> to undo.</strong></em></p>
+<p align="center"><em><strong>Type in <em>any language</em>. Press <code>Ctrl+]</code> to translate to English. Press <code>Ctrl+Y</code> to undo.</strong></em></p>
 
 ## Why This Exists
 
@@ -124,7 +124,9 @@ papa opencode # for Opencode
 | Hotkey | Action |
 |--------|--------|
 | `Ctrl+]` | Translate current input to English |
-| `Ctrl+Q` | Undo translation, restore original text |
+| `Ctrl+Y` | Undo translation, restore original text |
+
+> ⚠️ **Ghostty users (IME note):** When your input source is set to a non-English language (e.g. Korean, Japanese, Chinese), Ghostty does not recognise `Ctrl+<letter>` keypresses. Switch your input source to English before pressing hotkeys like `Ctrl+Y`. This is a Ghostty-level limitation, not a prompapa issue.
 
 ### One-shot translation
 
@@ -163,6 +165,29 @@ provider = "google"
 api_key_env = "GOOGLE_API_KEY"
 target_cmd = ["claude"]
 ```
+
+### Custom hotkeys
+
+If the default hotkeys (`Ctrl+]` / `Ctrl+Y`) don't work in your terminal (e.g. Ghostty), you can remap them:
+
+```toml
+[hotkeys]
+translate = "Ctrl+T"
+undo = "Alt+T"
+```
+
+Supported formats: `Ctrl+<key>`, `Alt+<key>`, `Ctrl+Alt+<key>`.
+
+You can also configure hotkeys interactively:
+
+```bash
+papa hotkey          # show current hotkeys
+papa hotkey --setup  # interactive setup
+```
+
+Reserved keys that cannot be used: `Ctrl+C`, `Ctrl+J`, `Ctrl+M`, `Ctrl+U`, `Ctrl+W`, `Ctrl+Z`, `Ctrl+[`, `Alt+C`, `Alt+N`, `Alt+O`.
+
+Both legacy raw bytes and Kitty keyboard protocol (CSI u) sequences are recognised automatically, so hotkeys work on modern terminals like Ghostty without extra configuration — but if your terminal still doesn't send the default sequences, remapping is the fix.
 
 ### preserve_backticks
 

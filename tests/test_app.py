@@ -8,11 +8,12 @@ import sys
 from unittest.mock import AsyncMock, patch
 from prompapa.app import (
     _display_width,
+    _find_hotkey,
     _translate_text,
     _run_translate_once,
     _UNDO_STACK_MAX,
 )
-from prompapa.config import AppConfig
+from prompapa.config import AppConfig, Hotkey
 from prompapa.translator import TranslationError
 
 
@@ -99,7 +100,7 @@ async def test_translate_text_without_masking(monkeypatch):
 
 # ── Hotkey byte parsing tests ─────────────────────────────────────────────────
 # These test the handle_stdin hotkey detection logic from app.py:
-#   Ctrl+] (0x1D) = translate, Ctrl+Q (0x11) = undo
+#   Ctrl+] (0x1D) = translate, Ctrl+Y (0x19) = undo
 # The actual handle_stdin is a closure inside _proxy_loop, so we test
 # the byte-level parsing patterns it depends on.
 
@@ -264,3 +265,90 @@ def test_undo_stack_pops_in_lifo_order():
     assert post == "C"
     pre2, post2 = stack.pop()
     assert pre2 == "b"
+
+
+# ── _find_hotkey tests (raw byte + CSI u detection) ─────────────────────────
+
+_CTRL_BRACKET = Hotkey(raw=b"\x1d", csi_u=b"\x1b[93;5u", label="Ctrl+]")
+_CTRL_Q = Hotkey(raw=b"\x11", csi_u=b"\x1b[113;5u", label="Ctrl+Q")
+
+
+class TestFindHotkey:
+    def test_raw_byte_found(self):
+        pos, length = _find_hotkey(b"\x1d", _CTRL_BRACKET)
+        assert pos == 0
+        assert length == 1
+
+    def test_csi_u_found(self):
+        pos, length = _find_hotkey(b"\x1b[93;5u", _CTRL_BRACKET)
+        assert pos == 0
+        assert length == len(b"\x1b[93;5u")
+
+    def test_not_found(self):
+        pos, length = _find_hotkey(b"normal text", _CTRL_BRACKET)
+        assert pos == -1
+        assert length == 0
+
+    def test_raw_before_csi_u(self):
+        data = b"\x1d\x1b[93;5u"
+        pos, length = _find_hotkey(data, _CTRL_BRACKET)
+        assert pos == 0
+        assert length == 1  # raw wins (earlier)
+
+    def test_csi_u_before_raw(self):
+        data = b"\x1b[93;5u\x1d"
+        pos, length = _find_hotkey(data, _CTRL_BRACKET)
+        assert pos == 0
+        assert length == len(b"\x1b[93;5u")
+
+    def test_csi_u_with_text_prefix(self):
+        data = b"hello\x1b[93;5u"
+        pos, length = _find_hotkey(data, _CTRL_BRACKET)
+        assert pos == 5
+        assert length == len(b"\x1b[93;5u")
+
+    def test_raw_in_data_stream(self):
+        data = b"abc\x1ddef"
+        pos, length = _find_hotkey(data, _CTRL_BRACKET)
+        assert pos == 3
+        assert length == 1
+
+    def test_csi_u_ctrl_q(self):
+        pos, length = _find_hotkey(b"\x1b[113;5u", _CTRL_Q)
+        assert pos == 0
+        assert length == len(b"\x1b[113;5u")
+
+    def test_after_data_correct_for_csi_u(self):
+        data = b"pre\x1b[93;5upost"
+        pos, hk_len = _find_hotkey(data, _CTRL_BRACKET)
+        after = data[pos + hk_len :]
+        assert after == b"post"
+
+    def test_after_data_correct_for_raw(self):
+        data = b"pre\x1dpost"
+        pos, hk_len = _find_hotkey(data, _CTRL_BRACKET)
+        after = data[pos + hk_len :]
+        assert after == b"post"
+
+    def test_alt_key_raw_found(self):
+        # Alt+T raw = ESC + 't'
+        alt_t = Hotkey(raw=b"\x1bt", csi_u=b"\x1b[116;3u", label="Alt+T")
+        pos, length = _find_hotkey(b"abc\x1btdef", alt_t)
+        assert pos == 3
+        assert length == 2
+        assert b"abc\x1btdef"[pos + length :] == b"def"
+
+    def test_alt_key_csi_u_found(self):
+        alt_t = Hotkey(raw=b"\x1bt", csi_u=b"\x1b[116;3u", label="Alt+T")
+        data = b"pre\x1b[116;3upost"
+        pos, length = _find_hotkey(data, alt_t)
+        assert pos == 3
+        assert data[pos + length :] == b"post"
+
+    def test_ctrl_alt_key_raw_found(self):
+        # Ctrl+Alt+T raw = ESC + 0x14
+        ctrl_alt_t = Hotkey(raw=b"\x1b\x14", csi_u=b"\x1b[116;7u", label="Ctrl+Alt+T")
+        data = b"abc\x1b\x14def"
+        pos, length = _find_hotkey(data, ctrl_alt_t)
+        assert pos == 3
+        assert length == 2

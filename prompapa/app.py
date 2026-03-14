@@ -4,9 +4,13 @@ PTY proxy for prompapa.
 Wraps a target CLI app (e.g. `claude`, `opencode`) in a PTY, forwarding all
 input/output transparently.
 
-Hotkeys:
-  Ctrl+]  --  Translate entire input text.
-  Ctrl+Q  --  Undo last translation (stack depth: _UNDO_STACK_MAX).
+Hotkeys (configurable via [hotkeys] in config.toml):
+  Ctrl+]  --  Translate entire input text (default).
+  Ctrl+Y  --  Undo last translation (default, stack depth: _UNDO_STACK_MAX).
+
+Both raw control bytes and Kitty keyboard protocol (CSI u) sequences are
+recognised, so hotkeys work on terminals like Ghostty that use the modern
+key encoding.
 
 Screen-capture-first translation flow (zero UI refresh):
   Capture:   pyte ScreenTracker reads the current input cell from the screen.
@@ -27,6 +31,7 @@ import shutil
 import signal
 import struct
 import sys
+from .hotkey import run_hotkey_show, run_hotkey_setup
 from .onboard import run_onboard
 from .uninstall import run_uninstall
 from .update import run_update
@@ -40,6 +45,7 @@ from prompapa.screen import ScreenTracker
 from prompapa.config import (
     AppConfig,
     ConfigError,
+    Hotkey,
     default_config_path,
     load_config,
     _load_dotenv,
@@ -48,6 +54,25 @@ from prompapa.masking import mask_tokens, unmask_tokens
 from prompapa.translator import TranslationError, rewrite_to_english
 
 _UNDO_STACK_MAX = 1
+
+
+def _find_hotkey(data: bytes, hotkey: Hotkey) -> tuple[int, int]:
+    """Find a hotkey in *data*, checking both raw byte and Kitty CSI u forms.
+
+    Returns ``(position, byte_length)`` of the earliest match,
+    or ``(-1, 0)`` if not found.
+    """
+    raw_pos = data.find(hotkey.raw)
+    csi_pos = data.find(hotkey.csi_u)
+    if raw_pos == -1 and csi_pos == -1:
+        return (-1, 0)
+    if csi_pos == -1:
+        return (raw_pos, len(hotkey.raw))
+    if raw_pos == -1:
+        return (csi_pos, len(hotkey.csi_u))
+    if raw_pos <= csi_pos:
+        return (raw_pos, len(hotkey.raw))
+    return (csi_pos, len(hotkey.csi_u))
 
 
 def _display_width(text: str) -> int:
@@ -183,21 +208,21 @@ async def _proxy_loop(
             loop.stop()
             return
 
-        ctrl_bracket = data.find(b"\x1d")
-        ctrl_q = data.find(b"\x11")
+        tr_pos, tr_len = _find_hotkey(data, config.hotkey_translate)
+        un_pos, un_len = _find_hotkey(data, config.hotkey_undo)
 
-        candidates: list[tuple[int, str]] = []
-        if ctrl_bracket != -1:
-            candidates.append((ctrl_bracket, "translate"))
-        if ctrl_q != -1:
-            candidates.append((ctrl_q, "undo"))
+        candidates: list[tuple[int, int, str]] = []
+        if tr_pos != -1:
+            candidates.append((tr_pos, tr_len, "translate"))
+        if un_pos != -1:
+            candidates.append((un_pos, un_len, "undo"))
 
         if not candidates:
             _forward_to_child(data)
             return
 
         candidates.sort()
-        idx, action = candidates[0]
+        idx, hk_len, action = candidates[0]
 
         stale = adapter.capture_text(screen) if idx > 0 else None
 
@@ -211,7 +236,7 @@ async def _proxy_loop(
             else:
                 asyncio.ensure_future(do_undo())
 
-        after = data[idx + 1 :]
+        after = data[idx + hk_len :]
         if after:
             _forward_to_child(after)
 
@@ -253,6 +278,12 @@ def main() -> None:
         sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "update":
         run_update()
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "hotkey":
+        if "--setup" in sys.argv:
+            run_hotkey_setup()
+        else:
+            run_hotkey_show()
         sys.exit(0)
 
     _load_dotenv(Path(".env"))
