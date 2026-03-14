@@ -61,6 +61,8 @@ Zwei Geister mit widerstreitenden Zwecken. Einer, der in seiner Muttersprache am
 
 Prompapa steht zwischen ihnen. Nichts mehr.
 
+> **Hinweis zur Effizienz:** Nicht-englische Sprachen leiden unter einer schweren Token-Strafe. Deutsch verbraucht beispielsweise oft deutlich mehr Token als genau die gleiche Absicht auf Englisch. Eine Übersetzung vor dem Senden reduziert die Aufblähung des Kontextfensters und die API-Kosten erheblich.
+
 ### Referenzen
 
 1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
@@ -69,6 +71,8 @@ Prompapa steht zwischen ihnen. Nichts mehr.
 4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## Installation
+
+> ⚠️ **OpenCode-Nutzer:** Derzeit unterstützt Prompapa die Seitenleistenansicht von OpenCode nicht. Führen Sie OpenCode mit deaktivierter Seitenleiste aus. Wir werden das so schnell wie möglich beheben!
 
 Benötigt [uv](https://docs.astral.sh/uv/). Falls noch nicht installiert:
 
@@ -115,12 +119,33 @@ papa codex # for Codex
 papa opencode # for Opencode
 ```
 
+> **Hinweis:** Wenn Sie `papa opencode` verwenden, deaktivieren Sie zuerst die Seitenleistenansicht. Prompapa kann den Eingabebereich nicht korrekt isolieren, wenn die Seitenleiste geöffnet ist, was zu Übersetzungsfehlern führt.
+
 Dein Tool öffnet sich genau wie gewohnt. Zwei neue Hotkeys:
 
 | Hotkey | Aktion |
 |--------|--------|
 | `Ctrl+]` | Aktuelle Eingabe ins Englische übersetzen |
 | `Ctrl+Q` | Übersetzung rückgängig machen, Originaltext wiederherstellen |
+
+### One-Shot-Übersetzung
+
+Übersetzen Sie Text direkt über die Befehlszeile, ohne eine TUI zu starten:
+
+```bash
+papa -t "버그를 고쳐줘"          # Koreanisch  → Fix the bug.
+papa -t "バグを修正して"          # Japanisch → Fix the bug.
+papa -t "修复这个错误"            # Chinesisch  → Fix this error.
+papa -t "Corrige el error"       # Spanisch  → Fix the error.
+papa -t "Corrige le bug"         # Französisch   → Fix the bug.
+papa -t "Behebe den Fehler"      # Deutsch   → Fix the bug.
+```
+
+Das übersetzte Ergebnis wird an stdout ausgegeben, sodass es einfach an andere Tools weitergeleitet werden kann:
+
+```bash
+papa -t "이 내용을 클립보드에 복사해줘" | pbcopy
+```
 
 ## Konfiguration
 
@@ -177,6 +202,7 @@ Lokal ohne Installation ausführen:
 
 ```bash
 uv run papa claude
+uv run papa -t "테스트 문장"
 ```
 
 ## Aktualisierung
@@ -197,5 +223,6 @@ Deine Konfiguration unter `~/.config/prompapa/` bleibt erhalten. Lösche sie man
 
 ## TODO
 - [x] `codex`- und `opencode`-Unterstützung
+- [ ] Unterstützung für die OpenCode-Seitenleistenansicht — löst derzeit einen Fehler aus, wenn die Seitenleiste aktiviert ist
 - [ ] LLM API Übersetzungsunterstützung (OpenAI, Gemini, Claude, ...)
 - [ ] Konfigurierbare Zielsprache und Erweiterung (aktuell nur Englisch)

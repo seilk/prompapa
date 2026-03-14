@@ -61,6 +61,8 @@ AIコーディングアシスタントは反対の方向から類似した制約
 
 Prompapaはその間に立っています。それだけです。
 
+> **効率性についてのメモ:** 英語以外の言語は深刻なトークンペナルティを受けます。たとえば韓国語や日本語は、まったく同じ意図を英語で表現する場合に比べて2〜3倍多くのトークンを消費することがよくあります。送信前に翻訳することで、コンテキストウィンドウの肥大化とAPIコストを大幅に削減できます。
+
 ### 参考文献
 
 1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
@@ -69,6 +71,8 @@ Prompapaはその間に立っています。それだけです。
 4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## インストール
+
+> ⚠️ **OpenCode ユーザーの皆様へ:** 現在、Prompapa は OpenCode のサイドバービューをサポートしていません。OpenCode を実行する際は、サイドバーを無効にしてご使用ください。この問題は可能な限り早く修正します！
 
 [uv](https://docs.astral.sh/uv/)が必要です。インストールされていない場合:
 
@@ -115,12 +119,33 @@ papa codex # for Codex
 papa opencode # for Opencode
 ```
 
+> **注:** `papa opencode` を使用する場合、まずサイドバービューを無効にしてください。サイドバーが開いていると、Prompapa が入力領域を正しく分離できず、翻訳エラーが発生します。
+
 ツールは通常通りに起動します。新しいホットキーが2つ追加されます:
 
 | ホットキー | 動作 |
 |--------|--------|
 | `Ctrl+]` | 現在の入力を英語に翻訳 |
 | `Ctrl+Q` | 翻訳を取り消し、原文を復元 |
+
+### ワンショット翻訳 (One-shot translation)
+
+TUIを起動せずに、コマンドラインからテキストを直接翻訳できます:
+
+```bash
+papa -t "버그를 고쳐줘"          # 韓国語  → Fix the bug.
+papa -t "バグを修正して"          # 日本語 → Fix the bug.
+papa -t "修复这个错误"            # 中国語  → Fix this error.
+papa -t "Corrige el error"       # スペイン語  → Fix the error.
+papa -t "Corrige le bug"         # フランス語   → Fix the bug.
+papa -t "Behebe den Fehler"      # ドイツ語   → Fix the bug.
+```
+
+翻訳結果は標準出力 (stdout) に出力されるため、他のツールへ簡単にパイプできます:
+
+```bash
+papa -t "이 내용을 클립보드에 복사해줘" | pbcopy
+```
 
 ## 設定
 
@@ -177,6 +202,7 @@ uv run pytest -v
 
 ```bash
 uv run papa claude
+uv run papa -t "테스트 문장"
 ```
 
 ## アップデート
@@ -197,5 +223,6 @@ papa uninstall
 
 ## TODO
 - [x] `codex` と `opencode` のサポート
+- [ ] OpenCode のサイドバービューサポート — 現在、サイドバーが有効になっているとエラーが発生します
 - [ ] LLM API 翻訳サポート (OpenAI, Gemini, Claude, ...)
 - [ ] 翻訳先言語の選択と多様化 (現在は英語固定)

@@ -61,6 +61,8 @@ Deux esprits aux buts contradictoires. L'un pense le plus clairement dans sa lan
 
 Prompapa se tient entre eux. Rien de plus.
 
+> **Note sur l'efficacité :** Les langues autres que l'anglais subissent une pénalité importante en matière de tokens. Le français, par exemple, consomme souvent bien plus de tokens pour exprimer exactement la même intention qu'en anglais. La traduction avant la soumission réduit de manière significative la surcharge de la fenêtre de contexte et les coûts de l'API.
+
 ### Références
 
 1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/2504.11833)
@@ -69,6 +71,8 @@ Prompapa se tient entre eux. Rien de plus.
 4. Hofman et al. (2025). *MAPS: A Multilingual Benchmark for Agent Performance and Security.* EACL 2026. [arXiv:2505.15935](https://arxiv.org/abs/2505.15935)
 
 ## Installation
+
+> ⚠️ **Utilisateurs d'OpenCode :** Actuellement, Prompapa ne supporte pas la vue latérale (sidebar) d'OpenCode. Lancez OpenCode avec la barre latérale désactivée. Nous réglerons cela très vite !
 
 Nécessite [uv](https://docs.astral.sh/uv/). Si vous ne l'avez pas encore :
 
@@ -115,12 +119,33 @@ papa codex # for Codex
 papa opencode # for Opencode
 ```
 
+> **Note :** Lorsque vous utilisez `papa opencode`, désactivez d'abord la vue latérale (sidebar). Prompapa ne peut pas isoler correctement la zone de saisie lorsque la barre latérale est ouverte, ce qui provoque des erreurs de traduction.
+
 Votre outil s'ouvre exactement comme d'habitude. Deux nouveaux raccourcis clavier :
 
 | Raccourci | Action |
 |--------|--------|
 | `Ctrl+]` | Traduire la saisie actuelle en anglais |
-| `Ctrl+Q` | Annuler la traduction, restaurer le texte original |
+| `Ctrl+Q` | Annuler la traduction, restaurar le texte original |
+
+### Traduction "one-shot"
+
+Traduisez du texte directement depuis la ligne de commande sans lancer l'interface TUI :
+
+```bash
+papa -t "버그를 고쳐줘"          # Coréen  → Fix the bug.
+papa -t "バグを修正して"          # Japonais → Fix the bug.
+papa -t "修复这个错误"            # Chinois  → Fix this error.
+papa -t "Corrige el error"       # Espagnol  → Fix the error.
+papa -t "Corrige le bug"         # Français   → Fix the bug.
+papa -t "Behebe den Fehler"      # Allemand   → Fix the bug.
+```
+
+Le résultat traduit est imprimé sur stdout, ce qui facilite son utilisation avec d'autres outils :
+
+```bash
+papa -t "이 내용을 클립보드에 복사해줘" | pbcopy
+```
 
 ## Configuration
 
@@ -177,6 +202,7 @@ Exécuter localement sans installation :
 
 ```bash
 uv run papa claude
+uv run papa -t "테스트 문장"
 ```
 
 ## Mise à jour
@@ -197,5 +223,6 @@ Votre configuration dans `~/.config/prompapa/` est conservée. Supprimez-la manu
 
 ## TODO
 - [x] Support `codex` et `opencode`
+- [ ] Support de la vue latérale d'OpenCode — lance actuellement une erreur lorsque la barre latérale est activée
 - [ ] Support de traduction via LLM API (OpenAI, Gemini, Claude, ...)
 - [ ] Langue cible (destination) configurable et élargie (actuellement anglais uniquement)
