@@ -96,3 +96,26 @@ Always make PTY proxy hotkeys configurable. Document known conflicts per termina
 - Tags: keybinding, terminal-compatibility, ghostty, xon-xoff
 
 ---
+
+## [LRN-20260314-005] best_practice
+
+**Logged**: 2026-03-14T22:00:00Z
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+Cursor probing with Ctrl+A/Ctrl+E is the most reliable input capture method for PTY proxies
+
+### Details
+Sending Ctrl+A (Home) and Ctrl+E (End) to the child TUI app and observing where the cursor lands gives the exact editable region — as defined by the app itself. Repeating until the cursor stops moving handles multiline input where a single Ctrl+A only moves to the start of the current line. This eliminates all heuristics: no prompt prefix detection, no decoration boundary parsing, no per-line marker matching. No visible TUI refresh was observed on Claude Code, Codex, or OpenCode.
+
+### Suggested Action
+Use cursor probing as the primary capture method. Keep adapter-specific screen capture as fallback only. Make probe parameters (max_repeats, settle_ms) configurable via system.toml.
+
+### Metadata
+- Source: conversation
+- Related Files: prompapa/app.py, prompapa/screen.py, prompapa/config.py
+- Tags: cursor-probe, ctrl-a, ctrl-e, capture, universal
+
+---
