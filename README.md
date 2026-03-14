@@ -111,8 +111,6 @@ This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation
 
 ## Usage
 
-> ⚠️ **OpenCode users:** When using `papa opencode`, disable the sidebar view first. Prompapa cannot correctly isolate the input area when the sidebar is open, which causes translation errors.
-
 ```bash
 papa claude # for Claude-Code
 papa codex # for Codex
