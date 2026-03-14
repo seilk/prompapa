@@ -110,7 +110,9 @@ This sets up `~/.config/prompapa/config.toml` with your Google Cloud Translation
 ## Usage
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 Your tool opens exactly as normal. Two new hotkeys:

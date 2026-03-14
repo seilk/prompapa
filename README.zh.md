@@ -110,7 +110,9 @@ papa onboard
 ## 使用方法
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 工具完全按照正常方式启动。新增两个快捷键：

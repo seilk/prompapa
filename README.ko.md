@@ -110,7 +110,9 @@ papa onboard
 ## 사용법
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 도구가 평소와 똑같이 실행됩니다. 새로운 단축키 두 가지:

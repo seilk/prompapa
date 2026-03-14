@@ -110,7 +110,9 @@ Esto configura `~/.config/prompapa/config.toml` con tu clave de API de Google Cl
 ## Uso
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 Tu herramienta se abre exactamente igual que siempre. Dos nuevos atajos de teclado:

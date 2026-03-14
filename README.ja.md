@@ -110,7 +110,9 @@ papa onboard
 ## 使い方
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 ツールは通常通りに起動します。新しいホットキーが2つ追加されます:

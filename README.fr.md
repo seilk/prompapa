@@ -110,7 +110,9 @@ Cela configure `~/.config/prompapa/config.toml` avec votre clé API Google Cloud
 ## Utilisation
 
 ```bash
-papa claude
+papa claude # for Claude-Code
+papa codex # for Codex
+papa opencode # for Opencode
 ```
 
 Votre outil s'ouvre exactement comme d'habitude. Deux nouveaux raccourcis clavier :
