@@ -132,6 +132,42 @@ class TestCaptureText:
         captured = adapter.capture_text(screen)
         assert "❯" in captured
 
+    def test_opencode_does_not_capture_claude_prompt(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("❯ some claude text\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "❯" in captured
+
+    def test_opencode_does_not_capture_codex_prompt(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("› some codex text\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "›" in captured
+
+    def test_claude_does_not_capture_opencode_prompt(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = ClaudeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("> some opencode text\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert ">" in captured
+
+    def test_codex_does_not_capture_opencode_prompt(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = CodexAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("> some opencode text\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert ">" in captured
+
 
 # ── Inject text tests ─────────────────────────────────────────────────────────
 
@@ -549,3 +585,146 @@ class TestGapTruncation:
     def test_no_gap_passthrough(self):
         result = OpenCodeAdapter._truncate_at_gap("simple text")
         assert result == "simple text"
+
+    def test_gap_exactly_at_threshold(self):
+        # 10 spaces is the _COLUMN_GAP threshold (r"\s{10,}")
+        result = OpenCodeAdapter._truncate_at_gap("text" + " " * 10 + "path")
+        assert result == "text"
+
+    def test_gap_below_threshold(self):
+        # 9 spaces should NOT trigger truncation
+        result = OpenCodeAdapter._truncate_at_gap("text" + " " * 9 + "more")
+        assert result == "text" + " " * 9 + "more"
+
+
+class TestCodexRealScreen:
+    def test_codex_dashboard_capture(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = CodexAdapter()
+        screen = ScreenTracker(cols=120, rows=30)
+        rows = [
+            "\u256d" + "\u2500" * 100 + "\u256e",
+            "\u2502 >_ OpenAI Codex" + " " * 84 + "\u2502",
+            "\u2570" + "\u2500" * 100 + "\u256f",
+            "",
+            "\u203a \ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8",
+        ]
+        screen.feed(("\r\n".join(rows) + "\r\n").encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "\ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8" in captured
+        assert "\u256d" not in captured
+        assert "OpenAI" not in captured
+
+    def test_codex_multiline_input(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = CodexAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed(
+            "\u203a first line\r\nsecond line\r\nthird line\r\n".encode("utf-8")
+        )
+        captured = adapter.capture_text(screen)
+        assert "first line" in captured
+        assert "second line" in captured
+        assert "third line" in captured
+
+
+class TestMultilineClearEdgeCases:
+    @pytest.mark.asyncio
+    async def test_codex_clear_four_lines(self):
+        adapter = CodexAdapter()
+        writes = []
+        with patch.object(
+            os, "write", side_effect=lambda fd, data: writes.append(data)
+        ):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                await adapter.clear_input(99, "a\nb\nc\nd")
+        ctrl_a = [w for w in writes if w == b"\x01"]
+        ctrl_k = [w for w in writes if w == b"\x0b"]
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(ctrl_a) == 4
+        assert len(ctrl_k) == 4
+        assert len(backspaces) == 3  # N-1 newline joins
+
+    @pytest.mark.asyncio
+    async def test_opencode_clear_four_lines(self):
+        adapter = OpenCodeAdapter()
+        writes = []
+        with patch.object(
+            os, "write", side_effect=lambda fd, data: writes.append(data)
+        ):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                await adapter.clear_input(99, "a\nb\nc\nd")
+        ctrl_a = [w for w in writes if w == b"\x01"]
+        ctrl_k = [w for w in writes if w == b"\x0b"]
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(ctrl_a) == 4
+        assert len(ctrl_k) == 4
+        assert len(backspaces) == 3
+
+    @pytest.mark.asyncio
+    async def test_claude_clear_multiline_uses_display_width(self):
+        adapter = ClaudeAdapter()
+        writes = []
+        with patch.object(
+            os, "write", side_effect=lambda fd, data: writes.append(data)
+        ):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                await adapter.clear_input(99, "line1\nline2")
+        # Claude uses right-arrow+backspace, NOT Ctrl+A/K.
+        # For multiline "line1\nline2" the display_width is 11 + 20 safety = 31.
+        right_arrows = [w for w in writes if w == b"\x1b[C"]
+        assert len(right_arrows) == 31
+        backspaces = [w for w in writes if b"\x7f" in w and w != b"\x1b[C"]
+        assert len(backspaces) == 1
+        assert backspaces[0] == b"\x7f" * 31
+
+    @pytest.mark.asyncio
+    async def test_codex_clear_single_char(self):
+        adapter = CodexAdapter()
+        writes = []
+        with patch.object(
+            os, "write", side_effect=lambda fd, data: writes.append(data)
+        ):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                await adapter.clear_input(99, "x")
+        assert writes[0] == b"\x01"
+        assert writes[1] == b"\x0b"
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(backspaces) == 0
+
+
+class TestAdapterProtocolConformance:
+    def test_all_adapters_have_prompt_prefixes(self):
+        for AdapterCls in (ClaudeAdapter, CodexAdapter, OpenCodeAdapter):
+            assert hasattr(AdapterCls, "prompt_prefixes")
+            assert isinstance(AdapterCls.prompt_prefixes, tuple)
+            assert len(AdapterCls.prompt_prefixes) >= 1
+
+    def test_all_adapters_have_clear_input(self):
+        for AdapterCls in (ClaudeAdapter, CodexAdapter, OpenCodeAdapter):
+            import asyncio
+            import inspect
+
+            assert hasattr(AdapterCls, "clear_input")
+            assert inspect.iscoroutinefunction(AdapterCls.clear_input)
+
+    def test_all_adapters_have_capture_text(self):
+        for AdapterCls in (ClaudeAdapter, CodexAdapter, OpenCodeAdapter):
+            assert hasattr(AdapterCls, "capture_text")
+            assert callable(AdapterCls.capture_text)
+
+    def test_all_adapters_have_inject_text(self):
+        for AdapterCls in (ClaudeAdapter, CodexAdapter, OpenCodeAdapter):
+            assert hasattr(AdapterCls, "inject_text")
+            assert callable(AdapterCls.inject_text)
+
+    def test_prompt_prefixes_are_unique_across_adapters(self):
+        all_prefixes = set()
+        for AdapterCls in (ClaudeAdapter, CodexAdapter, OpenCodeAdapter):
+            for prefix in AdapterCls.prompt_prefixes:
+                assert prefix not in all_prefixes, (
+                    f"Duplicate prefix '{prefix}' found across adapters"
+                )
+                all_prefixes.add(prefix)

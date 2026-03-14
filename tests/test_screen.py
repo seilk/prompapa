@@ -1,5 +1,5 @@
 import pytest
-from prompapa.screen import ScreenTracker
+from prompapa.screen import ScreenTracker, _is_decoration
 
 
 class TestScreenTrackerInitialization:
@@ -159,3 +159,175 @@ class TestStripDecorations:
         assert "more text" in captured
         assert "┃" not in captured
         assert "━" not in captured
+
+
+class TestIsDecoration:
+    """_is_decoration covers U+2500-U+259F: Box Drawing + Block Elements."""
+
+    def test_light_box_drawing(self):
+        # U+2500 (─), U+2502 (│), U+250C (┌), U+2510 (┐), U+2514 (└), U+2518 (┘)
+        for ch in "─│┌┐└┘":
+            assert _is_decoration(ch), f"{ch!r} (U+{ord(ch):04X}) should be decoration"
+
+    def test_heavy_box_drawing(self):
+        # U+2501 (━), U+2503 (┃), U+250F (┏), U+2513 (┓), U+2517 (┗), U+251B (┛)
+        for ch in "━┃┏┓┗┛":
+            assert _is_decoration(ch), f"{ch!r} (U+{ord(ch):04X}) should be decoration"
+
+    def test_double_line_box_drawing(self):
+        # U+2550 (═), U+2551 (║), U+2554 (╔), U+2557 (╗), U+255A (╚), U+255D (╝)
+        for ch in "═║╔╗╚╝":
+            assert _is_decoration(ch), f"{ch!r} (U+{ord(ch):04X}) should be decoration"
+
+    def test_block_elements(self):
+        # U+2580 (▀), U+2584 (▄), U+2588 (█), U+258C (▌), U+2590 (▐), U+2591-2593 (░▒▓)
+        for ch in "▀▄█▌▐░▒▓":
+            assert _is_decoration(ch), f"{ch!r} (U+{ord(ch):04X}) should be decoration"
+
+    def test_half_block_at_boundary(self):
+        # U+2579 (╹) -- encountered in opencode rendering
+        assert _is_decoration("\u2579")
+        # U+259F (▟) -- last char in block elements range
+        assert _is_decoration("\u259f")
+
+    def test_normal_text_not_decoration(self):
+        for ch in "abcABC123 !@#$%":
+            assert not _is_decoration(ch), f"{ch!r} should NOT be decoration"
+
+    def test_cjk_not_decoration(self):
+        for ch in "한국어中文日本語":
+            assert not _is_decoration(ch)
+
+    def test_boundary_below_range(self):
+        # U+24FF is just below the box drawing range
+        assert not _is_decoration("\u24ff")
+
+    def test_boundary_above_range(self):
+        # U+25A0 (■) is just above block elements range
+        assert not _is_decoration("\u25a0")
+
+
+class TestPanelIsolationRobustness:
+    def test_zero_separators_simple_strip(self):
+        result = ScreenTracker._strip_decorations("  hello world  ")
+        assert result == "hello world"
+
+    def test_one_separator_simple_strip(self):
+        # Single separator = just a border, not panel boundary
+        result = ScreenTracker._strip_decorations("\u2503 hello world")
+        assert result == "hello world"
+
+    def test_two_separators_panel_isolation(self):
+        main = " text " + " " * 40
+        side = " path "
+        line = "\u2502" + main + "\u2502" + side + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "text"
+        assert "path" not in result
+
+    def test_three_separators_picks_widest(self):
+        panel1 = " A " + " " * 30
+        panel2 = " B " + " " * 50
+        panel3 = " C "
+        line = "\u2502" + panel1 + "\u2502" + panel2 + "\u2502" + panel3 + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "B"
+
+    def test_mixed_separator_types(self):
+        # │ and █ both in _PANEL_SEPARATORS
+        main = " user input text " + " " * 40
+        sidebar = " context "
+        line = "\u2502" + main + "\u2588" + sidebar
+        result = ScreenTracker._strip_decorations(line)
+        assert "user input text" in result
+        assert "context" not in result
+
+    def test_heavy_and_full_block_mixed(self):
+        # ┃ and █ -- opencode session uses both
+        main = "  \u2503  typed text" + " " * 40
+        sidebar = "    sidebar"
+        line = main + "\u2588" + sidebar
+        result = ScreenTracker._strip_decorations(line)
+        assert "typed text" in result
+        assert "sidebar" not in result
+
+    def test_all_separator_types_recognized(self):
+        # │ (U+2502), ┃ (U+2503), ║ (U+2551), █ (U+2588)
+        for sep in "\u2502\u2503\u2551\u2588":
+            main = " text " + " " * 30
+            side = " path "
+            line = sep + main + sep + side + sep
+            result = ScreenTracker._strip_decorations(line)
+            assert result == "text", f"Failed for separator U+{ord(sep):04X}"
+            assert "path" not in result
+
+    def test_asymmetric_layout_wider_left(self):
+        left = " wide content area " + " " * 60
+        right = " x "
+        line = "\u2502" + left + "\u2502" + right + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert "wide content area" in result
+        assert "x" not in result
+
+    def test_asymmetric_layout_wider_right(self):
+        left = " y "
+        right = " wide content area " + " " * 60
+        line = "\u2502" + left + "\u2502" + right + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert "wide content area" in result
+
+    def test_edge_only_separators_at_start_and_end(self):
+        # Two seps at edges = panel isolation with one panel
+        line = "\u2502" + " hello " + " " * 40 + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == "hello"
+
+    def test_empty_panels(self):
+        line = "\u2502" + " " * 40 + "\u2502" + " " * 20 + "\u2502"
+        result = ScreenTracker._strip_decorations(line)
+        assert result == ""
+
+
+class TestCaptureEdgeCases:
+    def test_cursor_at_top_of_screen(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed(b"hello")
+        assert tracker.cursor[1] == 0
+        captured = tracker.capture_near_cursor()
+        assert "hello" in captured
+
+    def test_all_empty_lines_returns_empty(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        captured = tracker.capture_near_cursor()
+        assert captured == ""
+
+    def test_prompt_on_cursor_line_no_continuation(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed("\u276f single line only".encode("utf-8"))
+        captured = tracker.capture_near_cursor()
+        assert captured == "single line only"
+
+    def test_multiline_with_empty_gap_stops_scan(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed(b"old text\r\n\r\nnew text")
+        captured = tracker.capture_near_cursor()
+        assert "new text" in captured
+        assert "old text" not in captured
+
+    def test_cjk_text_capture(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed("\u276f \ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8\r\n".encode("utf-8"))
+        captured = tracker.capture_near_cursor()
+        assert captured == "\ud55c\uad6d\uc5b4 \ud14c\uc2a4\ud2b8"
+
+    def test_mixed_cjk_ascii_capture(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed(
+            "\u276f fix `src/auth.ts` \ud30c\uc77c\uc744 \uc218\uc815\ud574\uc918\r\n".encode(
+                "utf-8"
+            )
+        )
+        captured = tracker.capture_near_cursor()
+        assert "fix" in captured
+        assert "`src/auth.ts`" in captured
+        assert "\ud30c\uc77c\uc744" in captured
