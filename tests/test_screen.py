@@ -54,12 +54,13 @@ class TestCaptureNearCursor:
         assert "line2" in captured
         assert "line3" in captured
 
-    def test_capture_stops_at_empty_line(self):
+    def test_capture_preserves_blank_lines(self):
         tracker = ScreenTracker(cols=80, rows=24)
         tracker.feed(b"line1\r\nline2\r\n\r\nline4")
         captured = tracker.capture_near_cursor()
+        assert "line1" in captured
+        assert "line2" in captured
         assert "line4" in captured
-        assert "line2" not in captured
 
     def test_capture_skips_empty_lines_at_cursor(self):
         tracker = ScreenTracker(cols=80, rows=24)
@@ -307,12 +308,46 @@ class TestCaptureEdgeCases:
         captured = tracker.capture_near_cursor()
         assert captured == "single line only"
 
-    def test_multiline_with_empty_gap_stops_scan(self):
+    def test_multiline_input_with_blank_lines_and_prompt(self):
         tracker = ScreenTracker(cols=80, rows=24)
-        tracker.feed(b"old text\r\n\r\nnew text")
+        tracker.feed(
+            "❯ 사과\r\n\r\n바나나\r\n\r\n수박".encode("utf-8")
+        )
+        captured = tracker.capture_near_cursor()
+        assert "사과" in captured
+        assert "바나나" in captured
+        assert "수박" in captured
+
+    def test_prompt_with_blank_lines_stops_at_decoration(self):
+        tracker = ScreenTracker(cols=160, rows=24)
+        raw = (
+            "❯ input text\r\n"
+            "\r\n"
+            "more text\r\n"
+            "─" * 80 + "\r\n"
+            "  status bar\r\n"
+        )
+        tracker.feed(raw.encode("utf-8"))
+        captured = tracker.capture_near_cursor()
+        assert "input text" in captured
+        assert "more text" in captured
+        assert "status bar" not in captured
+
+    def test_fallback_multiline_with_single_blank_preserves_all(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        tracker.feed(b"line1\r\n\r\nline2\r\n\r\nline3")
+        captured = tracker.capture_near_cursor()
+        assert "line1" in captured
+        assert "line2" in captured
+        assert "line3" in captured
+
+    def test_fallback_stops_at_decoration_boundary(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        raw = "old output\r\n" + "─" * 40 + "\r\nnew text"
+        tracker.feed(raw.encode("utf-8"))
         captured = tracker.capture_near_cursor()
         assert "new text" in captured
-        assert "old text" not in captured
+        assert "old output" not in captured
 
     def test_cjk_text_capture(self):
         tracker = ScreenTracker(cols=80, rows=24)
