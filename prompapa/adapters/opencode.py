@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 
 from prompapa.screen import ScreenTracker
+
+_TERMINAL_JUNK = re.compile(r"\]4;\d|\]52;|tmux;|mux;|\d;\?\]")
 
 
 class OpenCodeAdapter:
@@ -11,14 +14,23 @@ class OpenCodeAdapter:
 
     async def clear_input(self, master_fd: int, captured: str) -> None:
         line_count = captured.count("\n") + 1
-        os.write(master_fd, b"\x01")  # Ctrl+A: move to start of line
-        await asyncio.sleep(0.05)
-        for _ in range(line_count + 2):  # +2 safety margin
-            os.write(master_fd, b"\x0b")  # Ctrl+K: kill to end of line
+        for i in range(line_count):
+            os.write(master_fd, b"\x01")  # Ctrl+A
             await asyncio.sleep(0.02)
+            os.write(master_fd, b"\x0b")  # Ctrl+K
+            await asyncio.sleep(0.02)
+            if i < line_count - 1:
+                os.write(master_fd, b"\x7f")  # Backspace: delete newline
+                await asyncio.sleep(0.02)
 
     def capture_text(self, screen: ScreenTracker) -> str:
-        return screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
+        raw = screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)
+        lines = [
+            line
+            for line in raw.split("\n")
+            if line.strip() and not _TERMINAL_JUNK.search(line)
+        ]
+        return "\n".join(lines)
 
     def inject_text(self, master_fd: int, text: str) -> None:
         os.write(

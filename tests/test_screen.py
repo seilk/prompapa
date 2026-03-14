@@ -128,6 +128,14 @@ class TestStripDecorations:
         result = ScreenTracker._strip_decorations("┌─────┐")
         assert result == ""
 
+    def test_strip_decorations_removes_heavy_box_chars(self):
+        result = ScreenTracker._strip_decorations("┏━━━━━┓")
+        assert result == ""
+
+    def test_strip_decorations_removes_heavy_vertical(self):
+        result = ScreenTracker._strip_decorations("┃ text ┃")
+        assert result == "text"
+
     def test_strip_decorations_preserves_text(self):
         result = ScreenTracker._strip_decorations("  hello world  ")
         assert result == "hello world"
@@ -141,3 +149,13 @@ class TestStripDecorations:
         assert "more text" in captured
         assert "┌" not in captured
         assert "│" not in captured
+
+    def test_capture_near_cursor_with_heavy_decorations(self):
+        tracker = ScreenTracker(cols=80, rows=24)
+        text = "┏━━━━━━━━━━━━━┓\r\n┃ hello world ┃\r\n┃ more text   ┃"
+        tracker.feed(text.encode("utf-8"))
+        captured = tracker.capture_near_cursor()
+        assert "hello world" in captured
+        assert "more text" in captured
+        assert "┃" not in captured
+        assert "━" not in captured

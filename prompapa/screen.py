@@ -2,7 +2,11 @@ from __future__ import annotations
 import pyte
 import shutil
 
-_BOX_CHARS = set("─│┌┐└┘├┤┬┴┼╭╮╰╯╴╵╶╷═║╔╗╚╝╠╣╦╩╬▀▄█▌▐░▒▓")
+
+def _is_decoration(ch: str) -> bool:
+    cp = ord(ch)
+    # U+2500-U+257F Box Drawing, U+2580-U+259F Block Elements
+    return 0x2500 <= cp <= 0x259F
 
 
 class ScreenTracker:
@@ -66,7 +70,7 @@ class ScreenTracker:
 
     @staticmethod
     def _strip_decorations(line: str) -> str:
-        result = "".join(ch for ch in line if ch not in _BOX_CHARS)
+        result = "".join(ch for ch in line if not _is_decoration(ch))
         return result.strip()
 
     @staticmethod

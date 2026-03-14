@@ -11,11 +11,14 @@ class CodexAdapter:
 
     async def clear_input(self, master_fd: int, captured: str) -> None:
         line_count = captured.count("\n") + 1
-        os.write(master_fd, b"\x01")  # Ctrl+A: move to start of line
-        await asyncio.sleep(0.05)
-        for _ in range(line_count + 2):  # +2 safety margin
+        for i in range(line_count):
+            os.write(master_fd, b"\x01")  # Ctrl+A: start of line
+            await asyncio.sleep(0.02)
             os.write(master_fd, b"\x0b")  # Ctrl+K: kill to end of line
             await asyncio.sleep(0.02)
+            if i < line_count - 1:
+                os.write(master_fd, b"\x7f")  # Backspace: delete preceding newline
+                await asyncio.sleep(0.02)
 
     def capture_text(self, screen: ScreenTracker) -> str:
         return screen.capture_near_cursor(prompt_prefixes=self.prompt_prefixes)

@@ -201,7 +201,7 @@ class TestClearInput:
         assert len(right_arrows) == 24
 
     @pytest.mark.asyncio
-    async def test_codex_clear_uses_ctrl_a_ctrl_k(self):
+    async def test_codex_clear_single_line(self):
         adapter = CodexAdapter()
         writes = []
         with patch.object(
@@ -210,11 +210,10 @@ class TestClearInput:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await adapter.clear_input(99, "hello")
 
-        # First write: Ctrl+A
         assert writes[0] == b"\x01"
-        # Remaining writes: Ctrl+K (1 line + 2 safety = 3)
-        ctrl_k_writes = [w for w in writes[1:] if w == b"\x0b"]
-        assert len(ctrl_k_writes) == 3
+        assert writes[1] == b"\x0b"
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(backspaces) == 0
 
     @pytest.mark.asyncio
     async def test_codex_clear_multiline(self):
@@ -226,12 +225,15 @@ class TestClearInput:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await adapter.clear_input(99, "line1\nline2\nline3")
 
-        ctrl_k_writes = [w for w in writes[1:] if w == b"\x0b"]
-        # 3 lines + 2 safety = 5
-        assert len(ctrl_k_writes) == 5
+        ctrl_a = [w for w in writes if w == b"\x01"]
+        ctrl_k = [w for w in writes if w == b"\x0b"]
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(ctrl_a) == 3
+        assert len(ctrl_k) == 3
+        assert len(backspaces) == 2
 
     @pytest.mark.asyncio
-    async def test_opencode_clear_uses_ctrl_a_ctrl_k(self):
+    async def test_opencode_clear_single_line(self):
         adapter = OpenCodeAdapter()
         writes = []
         with patch.object(
@@ -241,8 +243,24 @@ class TestClearInput:
                 await adapter.clear_input(99, "hello")
 
         assert writes[0] == b"\x01"
-        ctrl_k_writes = [w for w in writes[1:] if w == b"\x0b"]
-        assert len(ctrl_k_writes) == 3
+        assert writes[1] == b"\x0b"
+
+    @pytest.mark.asyncio
+    async def test_opencode_clear_multiline(self):
+        adapter = OpenCodeAdapter()
+        writes = []
+        with patch.object(
+            os, "write", side_effect=lambda fd, data: writes.append(data)
+        ):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
+                await adapter.clear_input(99, "line1\nline2")
+
+        ctrl_a = [w for w in writes if w == b"\x01"]
+        ctrl_k = [w for w in writes if w == b"\x0b"]
+        backspaces = [w for w in writes if w == b"\x7f"]
+        assert len(ctrl_a) == 2
+        assert len(ctrl_k) == 2
+        assert len(backspaces) == 1
 
     @pytest.mark.asyncio
     async def test_clear_empty_string(self):
@@ -304,3 +322,59 @@ class TestScreenPromptPrefixes:
         from prompapa.screen import ScreenTracker
 
         assert ScreenTracker._strip_prompt("hello", ("› ", "›")) == "hello"
+
+
+class TestHeavyBoxChars:
+    def test_strip_heavy_vertical(self):
+        from prompapa.screen import ScreenTracker
+
+        result = ScreenTracker._strip_decorations("┃ hello world ┃")
+        assert result == "hello world"
+
+    def test_strip_heavy_border(self):
+        from prompapa.screen import ScreenTracker
+
+        result = ScreenTracker._strip_decorations("┏━━━━━━━━━━━┓")
+        assert result == ""
+
+    def test_opencode_prompt_with_heavy_border(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("┃ > 번역할 텍스트 ┃\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "번역할 텍스트" in captured
+        assert "┃" not in captured
+
+
+class TestOpenCodeJunkFiltering:
+    def test_filters_osc_color_queries(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("> hello\r\n0;?]4;11;?]4;12;?tmux;\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "hello" in captured
+        assert "]4;" not in captured
+
+    def test_filters_tmux_clipboard(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("> test\r\nmux;]52;c;base64data\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "test" in captured
+        assert "]52;" not in captured
+
+    def test_preserves_clean_multiline(self):
+        from prompapa.screen import ScreenTracker
+
+        adapter = OpenCodeAdapter()
+        screen = ScreenTracker(cols=80, rows=24)
+        screen.feed("> first line\r\nsecond line\r\n".encode("utf-8"))
+        captured = adapter.capture_text(screen)
+        assert "first line" in captured
+        assert "second line" in captured
