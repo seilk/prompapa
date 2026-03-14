@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>Type in your language. Hit <code>Ctrl+]</code> in <strong>Claude Code / Codex / Opencode</strong>. Watch it become perfect English.</em>
+  <em>Type in your language. Hit <code>Ctrl+]</code> in <strong>Claude Code / Codex / Opencode</strong>. <br> Watch it become perfect English.</em>
 </p>
 
 <p align="center">
@@ -177,6 +177,6 @@ papa uninstall
 Your config at `~/.config/prompapa/` is kept. Remove it manually if needed.
 
 ## TODO
-- [ ] `opencode` support
+- [ x ] `codex` and `opencode` support
 - [ ] LLM API translation support (OpenAI, Gemini, Claude, ...)
 - [ ] Configurable target (destination) language — currently English only
