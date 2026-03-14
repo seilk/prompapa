@@ -109,6 +109,8 @@ class TestCaptureText:
             "  seil@host ~/path  |  Haiku\r\n"
         )
         screen.feed(raw.encode("utf-8"))
+        # Position cursor on the input line (row 1, 0-indexed).
+        screen.feed(b"\x1b[2;1H")
         assert "클로드 안녕" in adapter.capture_text(screen)
 
     def test_claude_does_not_capture_codex_prompt(self):

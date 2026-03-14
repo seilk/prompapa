@@ -4,6 +4,7 @@ plus adapter-specific capture tests based on real tmux captures.
 """
 
 from prompapa.screen import ScreenTracker
+from prompapa.adapters.claude import ClaudeAdapter
 from prompapa.adapters.codex import CodexAdapter
 from prompapa.adapters.opencode import OpenCodeAdapter
 
@@ -75,6 +76,78 @@ class TestCaptureByMarker:
         result = screen.capture_by_marker("\u2503")
         assert "main text" in result
         assert "sidebar" not in result
+
+
+# ── Claude adapter ──────────────────────────────────────────────────────────
+
+
+class TestClaudeCapture:
+    def test_normal_input_with_prompt(self):
+        screen = _make_screen([
+            "─" * 120,
+            "❯ 한국어 텍스트",
+            "─" * 120,
+            "  status bar",
+        ], cursor_y=1)
+        captured = ClaudeAdapter().capture_text(screen)
+        assert captured.strip() == "한국어 텍스트"
+        assert "❯" not in captured
+
+    def test_multiline_with_blanks(self):
+        screen = _make_screen([
+            "─" * 120,
+            "❯ 사과",
+            "",
+            "  바나나",
+            "",
+            "  수박",
+            "─" * 120,
+            "  status bar",
+        ], cursor_y=5)
+        captured = ClaudeAdapter().capture_text(screen)
+        assert "사과" in captured
+        assert "바나나" in captured
+        assert "수박" in captured
+        assert "status" not in captured
+
+    def test_amendment_mode(self):
+        """Amendment mode: ❯ appears as selection cursor in the approval
+        dialog above, and the editable input area is below between
+        decoration lines.  The user's amendment text is inline with the
+        selected option. Cursor sits in the editable area."""
+        screen = _make_screen([
+            " Do you want to proceed?",
+            " ❯ 1. Yes",
+            "   2. Yes, and always allow access",
+            "   3. No",
+            "",
+            " Esc to cancel · Tab to amend · ctrl+e to explain",
+            "─" * 120,
+            "❯ 이 파일을 수정해줘",
+            "─" * 120,
+            "  status bar",
+        ], cursor_y=7)
+        captured = ClaudeAdapter().capture_text(screen)
+        assert "이 파일을 수정해줘" in captured
+        assert "Yes" not in captured
+        assert "proceed" not in captured
+
+    def test_amendment_inline_edit(self):
+        """User pressed Tab to amend, editable text appears to the right
+        of the selected choice. Cursor is within the editable area on
+        the same line."""
+        screen = _make_screen([
+            " Do you want to proceed?",
+            " ❯ 1. Yes 수정된 내용을 여기에 입력",
+            "   2. No",
+            "",
+            " Esc to cancel",
+            "─" * 120,
+        ], cursor_y=1)
+        captured = ClaudeAdapter().capture_text(screen)
+        # The full line between decoration boundaries, including the
+        # inline amendment text, should be captured.
+        assert "수정된 내용을 여기에 입력" in captured
 
 
 # ── Codex adapter ───────────────────────────────────────────────────────────
