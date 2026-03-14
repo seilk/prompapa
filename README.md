@@ -61,6 +61,8 @@ Two minds at cross-purposes. One that thinks clearest in its native tongue. One 
 
 Prompapa sits between them. Nothing more.
 
+> **Note on efficiency:** Non-English languages suffer a severe token penalty. Korean, for example, often consumes 2–3× more tokens than the exact same intent expressed in English. Translating before submission significantly reduces context window bloat and API costs.
+
 ### References
 
 1. Gao et al. (2025). *Could Thinking Multilingually Empower LLM Reasoning?* [arXiv:2504.11833](https://arxiv.org/abs/arXiv:2504.11833)
