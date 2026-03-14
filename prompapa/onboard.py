@@ -1,6 +1,7 @@
 import sys
 import getpass
 import httpx
+import questionary
 from pathlib import Path
 import textwrap
 
@@ -83,26 +84,29 @@ def _test_anthropic(api_key: str, model: str) -> str:
     return response.json()["content"][0]["text"].strip()
 
 
-_GRAY = "\x1b[90m"
-_RESET = "\x1b[0m"
-
-
 def _pick_provider() -> str:
-    print("Select translation provider:")
-    print("  1) Google Cloud Translation  (fast, free tier 500k chars/month)")
-    print(f"  {_GRAY}2) OpenAI                    (LLM quality) — To be added!{_RESET}")
-    print(f"  {_GRAY}3) Anthropic                 (LLM quality) — To be added!{_RESET}")
-    print()
-    while True:
-        choice = input("Provider [1]: ").strip() or "1"
-        if choice == "1":
-            return "google"
-        if choice in ("2", "3"):
-            print(
-                f"  {_GRAY}LLM providers are not yet available. Please select 1.{_RESET}"
-            )
-            continue
-        print("  Please enter 1.")
+    choice = questionary.select(
+        "Select translation provider:",
+        choices=[
+            questionary.Choice(
+                "Google Cloud Translation  (fast, free tier 500k chars/month)",
+                value="google",
+            ),
+            questionary.Choice(
+                "OpenAI                    (LLM quality) — To be added!",
+                value="openai",
+                disabled="To be added!",
+            ),
+            questionary.Choice(
+                "Anthropic                 (LLM quality) — To be added!",
+                value="anthropic",
+                disabled="To be added!",
+            ),
+        ],
+    ).ask()
+    if choice is None:
+        sys.exit(0)
+    return choice
 
 
 def _pick_model(provider: str) -> str:
