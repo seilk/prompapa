@@ -18,6 +18,10 @@ def _get_version() -> str:
         return "0.0.0-dev"
 
 
+# Known subcommands — anything else is treated as a PTY target name.
+_SUBCOMMANDS = {"onboard", "uninstall", "update", "hotkey", "translate"}
+
+
 @click.group(
     invoke_without_command=True,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -174,10 +178,22 @@ def _run_proxy(target: str | None) -> None:
 def main() -> None:
     """Entry point that preprocesses sys.argv for backward compat.
 
-    Maps ``papa -t "text"`` to ``papa translate "text"`` so the old
-    form continues to work.
+    Handles two backward-compat cases before click sees the arguments:
+    1. ``papa -t "text"`` → ``papa translate "text"``
+    2. ``papa claude`` (unknown subcommand) → launch PTY proxy directly
     """
     args = sys.argv[1:]
+
+    # Map `papa -t "text"` -> `papa translate "text"`
     if len(args) >= 2 and args[0] == "-t":
         sys.argv = [sys.argv[0], "translate"] + args[1:]
+        papa(standalone_mode=True)
+        return
+
+    # If the first arg looks like a target name (not a known subcommand
+    # and not a flag), launch PTY proxy directly.
+    if args and not args[0].startswith("-") and args[0] not in _SUBCOMMANDS:
+        _run_proxy(target=args[0])
+        return
+
     papa(standalone_mode=True)
