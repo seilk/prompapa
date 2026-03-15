@@ -26,31 +26,19 @@ from __future__ import annotations
 import asyncio
 import fcntl
 import os
-import pty
 import shutil
 import signal
 import struct
 import sys
-from .hotkey import run_hotkey_show, run_hotkey_setup
-from .onboard import run_onboard
-from .uninstall import run_uninstall
-from .update import run_update
 import termios
-import tty
 import unicodedata
-from pathlib import Path
 
-from prompapa.adapters import TargetAdapter, get_adapter
+from prompapa.adapters import TargetAdapter
 from prompapa.screen import ScreenTracker
 from prompapa.config import (
     AppConfig,
-    ConfigError,
     Hotkey,
     SystemConfig,
-    default_config_path,
-    load_config,
-    load_system_config,
-    _load_dotenv,
 )
 from prompapa.masking import mask_tokens, unmask_tokens
 from prompapa.translator import TranslationError, rewrite_to_english
@@ -325,95 +313,7 @@ async def _run_translate_once(text: str, config: AppConfig) -> None:
     print(result)
 
 
-def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] == "onboard":
-        run_onboard()
-        sys.exit(0)
-    if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
-        run_uninstall()
-        sys.exit(0)
-    if len(sys.argv) > 1 and sys.argv[1] == "update":
-        run_update()
-        sys.exit(0)
-    if len(sys.argv) > 1 and sys.argv[1] == "hotkey":
-        if "--setup" in sys.argv:
-            run_hotkey_setup()
-        else:
-            run_hotkey_show()
-        sys.exit(0)
-
-    _load_dotenv(Path(".env"))
-    config_path = default_config_path()
-    try:
-        config = load_config(config_path)
-        config.resolve_api_key()
-    except ConfigError as e:
-        print(f"prompapa: {e}", file=sys.stderr)
-        print(f"\nCreate config at: {config_path}", file=sys.stderr)
-        print(
-            '\nExample:\n  provider = "openai"\n  model = "gpt-4.1-mini"'
-            '\n  api_key_env = "OPENAI_API_KEY"\n  target_cmd = ["claude"]',
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    if len(sys.argv) >= 3 and sys.argv[1] == "-t":
-        text = " ".join(sys.argv[2:])
-        try:
-            asyncio.run(_run_translate_once(text, config))
-        except TranslationError as e:
-            print(f"prompapa: translation failed: {e}", file=sys.stderr)
-            sys.exit(1)
-        sys.exit(0)
-
-    if not sys.stdin.isatty():
-        print(
-            "prompapa: stdin is not a TTY. Run directly in a terminal, not inside a pipe or IDE shell.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    args = sys.argv[1:]
-    if args:
-        target_name = args[0]
-        cmd = args
-    else:
-        cmd = config.target_cmd
-        target_name = cmd[0]
-
-    try:
-        adapter = get_adapter(target_name)
-    except ValueError as e:
-        print(f"prompapa: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    if not shutil.which(cmd[0]):
-        print(f"prompapa: command not found: {cmd[0]}", file=sys.stderr)
-        sys.exit(1)
-
-    pid, master_fd = pty.fork()
-
-    if pid == 0:
-        os.environ["PROMPT_TOOLKIT_NO_CPR"] = "1"
-        os.execvp(cmd[0], cmd)
-        sys.exit(1)
-
-    _set_winsize(master_fd)
-    old_attrs = termios.tcgetattr(sys.stdin.fileno())
-    tty.setraw(sys.stdin.fileno())
-
-    sys_config = load_system_config()
-
-    try:
-        asyncio.run(_proxy_loop(master_fd, config, pid, adapter, sys_config))
-    finally:
-        termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_attrs)
-        try:
-            os.waitpid(pid, 0)
-        except ChildProcessError:
-            pass
-        os.close(master_fd)
-
-
 if __name__ == "__main__":
+    from prompapa.cli import main
+
     main()
