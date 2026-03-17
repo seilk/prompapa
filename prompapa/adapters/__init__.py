@@ -17,10 +17,12 @@ _ADAPTERS: dict[str, type[TargetAdapter]] = {}
 
 
 def _register() -> None:
+    from prompapa.adapters.ccr import CCRAdapter
     from prompapa.adapters.claude import ClaudeAdapter
     from prompapa.adapters.codex import CodexAdapter
     from prompapa.adapters.opencode import OpenCodeAdapter
 
+    _ADAPTERS["ccr"] = CCRAdapter
     _ADAPTERS["claude"] = ClaudeAdapter
     _ADAPTERS["codex"] = CodexAdapter
     _ADAPTERS["opencode"] = OpenCodeAdapter

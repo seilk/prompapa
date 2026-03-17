@@ -99,7 +99,7 @@ def translate_cmd(text: tuple[str, ...]) -> None:
         sys.exit(1)
 
 
-def _run_proxy(target: str | None) -> None:
+def _run_proxy(target: str | None, command: list[str] | None = None) -> None:
     """Launch the PTY proxy (default command)."""
     import os
     import pty
@@ -134,7 +134,10 @@ def _run_proxy(target: str | None) -> None:
         )
         sys.exit(1)
 
-    if target:
+    if command is not None:
+        cmd = command
+        target_name = cmd[0]
+    elif target:
         cmd = [target]
         target_name = target
     else:
@@ -188,6 +191,10 @@ def main() -> None:
     if len(args) >= 2 and args[0] == "-t":
         sys.argv = [sys.argv[0], "translate"] + args[1:]
         papa(standalone_mode=True)
+        return
+
+    if len(args) >= 2 and args[0] == "ccr" and args[1] == "code":
+        _run_proxy(target=None, command=["ccr", "code", *args[2:]])
         return
 
     # If the first arg looks like a target name (not a known subcommand
