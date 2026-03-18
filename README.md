@@ -77,9 +77,6 @@ Requires [uv](https://docs.astral.sh/uv/). If you don't have it:
 ```bash
 # macOS / Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 Then install prompapa:
