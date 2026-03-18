@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-03-17
+
+### Added
+- Dedicated CCR adapter support for Claude Code Router sessions
+- `papa ccr code [args...]` forwarding with passthrough of trailing CCR arguments
+
+
 ## [1.0.1] - 2026-03-14
 
 ### Fixed
