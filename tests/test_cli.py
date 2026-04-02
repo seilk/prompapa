@@ -98,14 +98,42 @@ def test_main_routes_ccr_code_with_trailing_args():
     }
 
 
-def test_main_routes_unknown_single_arg_to_proxy_target():
+def test_main_routes_unknown_single_arg_to_proxy_command():
     with patch.object(cli, "_run_proxy") as run_proxy, patch.object(
         cli.sys, "argv", ["papa", "claude"]
     ):
         cli.main()
 
     _, kwargs = run_proxy.call_args
-    assert kwargs == {"target": "claude"}
+    assert kwargs == {"target": None, "command": ["claude"]}
+
+
+def test_main_routes_claude_with_sub_args():
+    """papa claude -w 'my-worktree' should forward -w and worktree name."""
+    with patch.object(cli, "_run_proxy") as run_proxy, patch.object(
+        cli.sys, "argv", ["papa", "claude", "-w", "my-worktree"]
+    ):
+        cli.main()
+
+    _, kwargs = run_proxy.call_args
+    assert kwargs == {
+        "target": None,
+        "command": ["claude", "-w", "my-worktree"],
+    }
+
+
+def test_main_routes_claude_with_multiple_flags():
+    """papa claude --verbose -p 'prompt' should forward all args."""
+    with patch.object(cli, "_run_proxy") as run_proxy, patch.object(
+        cli.sys, "argv", ["papa", "claude", "--verbose", "-p", "do something"]
+    ):
+        cli.main()
+
+    _, kwargs = run_proxy.call_args
+    assert kwargs == {
+        "target": None,
+        "command": ["claude", "--verbose", "-p", "do something"],
+    }
 
 
 def test_ccr_adapter_is_registered():
