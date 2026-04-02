@@ -200,7 +200,7 @@ def main() -> None:
     # If the first arg looks like a target name (not a known subcommand
     # and not a flag), launch PTY proxy directly.
     if args and not args[0].startswith("-") and args[0] not in _SUBCOMMANDS:
-        _run_proxy(target=args[0])
+        _run_proxy(target=None, command=args)
         return
 
     papa(standalone_mode=True)
